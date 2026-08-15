@@ -156,6 +156,7 @@ export class GetProductsByCollectionHandler implements IQueryHandler<GetProducts
         const badgesArr = p.badges ? (Array.isArray(p.badges) ? p.badges : []) : [];
         return badgesArr.includes('EXCLUSIVE');
       });
+    }
     if (slug === 'asics' || slug === 'asics-lifewalker' || slug === 'lifewalker') {
       return mapped.filter(p => (p.brand && p.brand.toLowerCase() === 'asics') || p.isAsicsExclusive || (p.name && p.name.toLowerCase().includes('lifewalker')));
     }
