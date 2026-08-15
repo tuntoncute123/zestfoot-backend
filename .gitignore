@@ -1,0 +1,52 @@
+# NestJS Build and Dependency directories
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Python Virtual Environment, cache & credentials
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.temp/
+temp/
+cookies.json
+**/cookies.json
+*.cookies
+gemini_cookies/
+**/gemini_cookies/
+Gemini-API/__pycache__/
+Gemini-API/temp_uploads/
+Gemini-API/cookies.json
+Gemini-API/gemini_cookies/
+
+# Local Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Agent & Tooling local artifacts
+.agents/
+.codegraph/
+.gemini/
+skills-lock.json

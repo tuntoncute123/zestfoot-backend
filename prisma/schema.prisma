@@ -1,0 +1,426 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Brand {
+  id    BigInt  @id @default(autoincrement())
+  name  String
+  logo  String?
+  slug  String?
+
+  products Product[]
+
+  @@map("brands")
+}
+
+model Product {
+  id                BigInt   @id @default(autoincrement())
+  brand_id          BigInt?
+  name              String
+  brand             String?
+  price             BigInt?
+  costPrice         BigInt?
+  salePrice         BigInt?
+  image             String?
+  isNew             Boolean? @default(false)
+  isSale            Boolean? @default(false)
+  isTrending        Boolean? @default(false)
+  isAsicsExclusive  Boolean? @default(false)
+  viewsCount        Int?     @default(0)
+  category          String?
+  subCategory       String?
+  gender            String?
+  badges            Json?
+  
+  brandRef          Brand?     @relation(fields: [brand_id], references: [id])
+  reviews           Review[]
+  orderItems        OrderItem[]
+
+  @@map("products")
+}
+
+model News {
+  id      BigInt  @id @default(autoincrement())
+  title   String?
+  excerpt String?
+  image   String?
+  date    String?
+  content String?
+
+  @@map("news")
+}
+
+model Order {
+  id                BigInt      @id @default(autoincrement())
+  user_id           String?     @db.Uuid
+  created_at        DateTime    @default(now()) @db.Timestamptz
+  customer          Json
+  items             Json
+  sub_total         Decimal?    @db.Decimal
+  shipping_fee      Decimal?    @db.Decimal
+  discount          Decimal?    @db.Decimal
+  total_amount      Decimal?    @db.Decimal
+  status            String?     @default("pending")
+  payment_method    String?
+  payment_info      Json?
+  voucher_discount  Decimal?    @default(0) @db.Decimal
+  voucher_code      String?
+  point_discount    Decimal?    @default(0) @db.Decimal
+  tracking_code     String?
+  carrier           String?
+  shipping_timeline Json?
+
+  profile           Profile?    @relation(fields: [user_id], references: [id])
+  orderItems        OrderItem[]
+  qrTickets         QrTicket[]
+  warranties        DigitalWarranty[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         BigInt   @id @default(autoincrement())
+  order_id   BigInt
+  product_id BigInt
+  price      Decimal  @db.Decimal
+  quantity   Int
+  total      Decimal  @db.Decimal
+
+  order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [product_id], references: [id])
+
+  @@map("order_items")
+}
+
+model Profile {
+  id              String             @id @db.Uuid
+  updated_at      DateTime?          @db.Timestamptz
+  full_name       String?
+  points          Int?               @default(0)
+  tier            String?            @default("Silver")
+  totalSpent      Decimal?           @default(0) @db.Decimal
+  last_lucky_spin DateTime?          @db.Timestamptz
+  spin_tickets    Int?               @default(0)
+  email           String?            @unique
+  password        String?
+  
+  transactions    PointTransaction[]
+  vouchers        UserVoucher[]
+  posts           SocialPost[]
+  comments        SocialComment[]
+  reactions       SocialReaction[]
+  leaderboard     GameLeaderboard[]
+  orders          Order[]
+  reviews         Review[]
+  spinHistory     SpinHistory[]
+  dailyGamePlays  DailyGamePlay[]
+  userBadges      UserBadge[]
+  userBadgeClaims UserBadgeClaim[]
+  qrTickets       QrTicket[]
+  raffleEntries   RaffleEntry[]
+  warranties      DigitalWarranty[]
+  shoeCareBookings ShoeCareBooking[]
+
+  @@map("profiles")
+}
+
+model PointTransaction {
+  id         BigInt   @id @default(autoincrement())
+  user_id    String   @db.Uuid
+  amount     Int
+  reason     String
+  type       String
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  profile    Profile  @relation(fields: [user_id], references: [id])
+
+  @@map("point_transactions")
+}
+
+model UserVoucher {
+  id              BigInt    @id @default(autoincrement())
+  user_id         String    @db.Uuid
+  code            String
+  discount_amount Int
+  min_order_value Int?      @default(0)
+  status          String?   @default("active")
+  created_at      DateTime? @default(now()) @db.Timestamptz
+  expires_at      DateTime? @db.Timestamptz
+
+  profile         Profile   @relation(fields: [user_id], references: [id])
+
+  @@map("user_vouchers")
+}
+
+model DailyGamePlay {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String    @db.Uuid
+  game_name      String
+  last_played_at DateTime? @default(now()) @db.Timestamptz
+
+  profile        Profile   @relation(fields: [user_id], references: [id])
+
+  @@map("daily_game_plays")
+}
+
+model Coupon {
+  id                  BigInt    @id @default(autoincrement())
+  code                String    @unique
+  discount_type       String
+  discount_value      Decimal   @db.Decimal
+  min_order_value     Decimal?  @default(0) @db.Decimal
+  max_discount_amount Decimal?  @db.Decimal
+  start_date          DateTime? @default(now()) @db.Timestamptz
+  end_date            DateTime? @db.Timestamptz
+  usage_limit         Int?
+  used_count          Int?      @default(0)
+  is_active           Boolean?  @default(true)
+  created_at          DateTime? @default(now()) @db.Timestamptz
+
+  @@map("coupons")
+}
+
+model SocialPost {
+  id         String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String?         @db.Uuid
+  caption    String?
+  image      String
+  created_at DateTime        @default(now()) @db.Timestamptz
+
+  profile    Profile?        @relation(fields: [user_id], references: [id])
+  comments   SocialComment[]
+  reactions  SocialReaction[]
+
+  @@map("social_posts")
+}
+
+model SocialComment {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  post_id    String?    @db.Uuid
+  user_id    String?    @db.Uuid
+  content    String
+  created_at DateTime   @default(now()) @db.Timestamptz
+
+  post       SocialPost? @relation(fields: [post_id], references: [id])
+  profile    Profile?    @relation(fields: [user_id], references: [id])
+
+  @@map("social_comments")
+}
+
+model SocialReaction {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  post_id       String?    @db.Uuid
+  user_id       String?    @db.Uuid
+  reaction_type String
+  created_at    DateTime   @default(now()) @db.Timestamptz
+
+  post          SocialPost? @relation(fields: [post_id], references: [id])
+  profile       Profile?    @relation(fields: [user_id], references: [id])
+
+  @@map("social_reactions")
+}
+
+model Review {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id            BigInt?
+  user_id               String?  @db.Uuid
+  rating                Int
+  title                 String
+  content               String
+  display_name          String
+  email                 String?
+  avatar                String?
+  sentiment             String?
+  sentiment_score       Float?
+  sentiment_explanation String?
+  media_urls            Json?
+  rewarded_points       Boolean? @default(false)
+  created_at            DateTime @default(now()) @db.Timestamptz
+
+  product               Product? @relation(fields: [product_id], references: [id])
+  profile               Profile? @relation(fields: [user_id], references: [id])
+
+  @@map("reviews")
+}
+
+model GameLeaderboard {
+  id         BigInt   @id @default(autoincrement())
+  user_id    String   @db.Uuid
+  game_name  String
+  score      Int
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  profile    Profile  @relation(fields: [user_id], references: [id])
+
+  @@map("game_leaderboard")
+}
+
+model CampaignPrize {
+  id                 Int      @id @default(autoincrement())
+  prize_name         String
+  prize_type         String   @unique
+  total_quantity     Int      @default(0)
+  remaining_quantity Int      @default(0)
+  drop_rate          Decimal  @default(0.0000) @db.Decimal
+  prize_image        String?
+  created_at         DateTime @default(now()) @db.Timestamptz
+
+  @@map("campaign_prizes")
+}
+
+model QrTicket {
+  id         String    @id
+  order_id   String?
+  user_id    String?   @db.Uuid
+  is_used    Boolean   @default(false)
+  used_at    DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  expired_at DateTime? @db.Timestamptz
+
+  order      Order?    @relation(fields: [order_idRef], references: [id])
+  order_idRef BigInt?
+  profile    Profile?  @relation(fields: [user_id], references: [id])
+
+  @@map("qr_tickets")
+}
+
+model SpinHistory {
+  id         BigInt   @id @default(autoincrement())
+  user_id    String?  @db.Uuid
+  user_name  String?
+  prize_name String
+  prize_type String
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  profile    Profile? @relation(fields: [user_id], references: [id])
+
+  @@map("spin_history")
+}
+
+model UserBadge {
+  user_id    String @db.Uuid
+  badge_type String
+  quantity   Int    @default(0)
+
+  profile    Profile @relation(fields: [user_id], references: [id])
+
+  @@id([user_id, badge_type])
+  @@map("user_badges")
+}
+
+model UserBadgeClaim {
+  id         BigInt   @id @default(autoincrement())
+  user_id    String   @db.Uuid
+  shoe_size  Int
+  order_id   String
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  profile    Profile  @relation(fields: [user_id], references: [id])
+
+  @@map("user_badge_claims")
+}
+
+model RaffleCampaign {
+  id             BigInt        @id @default(autoincrement())
+  product_id     BigInt?
+  title          String
+  description    String?
+  image          String?
+  price          Decimal       @db.Decimal
+  total_winners  Int           @default(10)
+  start_date     DateTime      @db.Timestamptz
+  end_date       DateTime      @db.Timestamptz
+  draw_date      DateTime      @db.Timestamptz
+  status         String        @default("upcoming")
+  created_at     DateTime      @default(now()) @db.Timestamptz
+
+  entries        RaffleEntry[]
+
+  @@map("raffle_campaigns")
+}
+
+model RaffleEntry {
+  id             BigInt         @id @default(autoincrement())
+  campaign_id    BigInt
+  user_id        String         @db.Uuid
+  shoe_size      String
+  status         String         @default("PENDING")
+  ticket_code    String         @unique
+  created_at     DateTime       @default(now()) @db.Timestamptz
+
+  campaign       RaffleCampaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  profile        Profile        @relation(fields: [user_id], references: [id])
+
+  @@map("raffle_entries")
+}
+
+model DigitalWarranty {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id       BigInt
+  product_id     BigInt?
+  user_id        String    @db.Uuid
+  qr_code        String
+  shoe_name      String
+  shoe_size      String?
+  warranty_start DateTime  @default(now()) @db.Timestamptz
+  warranty_end   DateTime  @db.Timestamptz
+  coverage       String    @default("Bảo hành bung keo, đứt chỉ, rách đế trong 12 tháng")
+  status         String    @default("ACTIVE")
+
+  order          Order     @relation(fields: [order_id], references: [id])
+  profile        Profile   @relation(fields: [user_id], references: [id])
+
+  @@map("digital_warranties")
+}
+
+model ShoeCareBooking {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String    @db.Uuid
+  service_name   String
+  shoe_model     String
+  notes          String?
+  pickup_method  String    @default("STORE_DROP")
+  booking_date   DateTime  @db.Timestamptz
+  status         String    @default("RECEIVED")
+  price          Decimal   @db.Decimal
+  created_at     DateTime  @default(now()) @db.Timestamptz
+
+  profile        Profile   @relation(fields: [user_id], references: [id])
+
+  @@map("shoe_care_bookings")
+}
+
+model ShoppableLookbook {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  author_name    String
+  author_avatar  String?
+  image_url      String
+  likes_count    Int           @default(0)
+  created_at     DateTime      @default(now()) @db.Timestamptz
+
+  tags           LookbookTag[]
+
+  @@map("shoppable_lookbooks")
+}
+
+model LookbookTag {
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lookbook_id    String            @db.Uuid
+  product_id     BigInt
+  product_name   String
+  price          Decimal           @db.Decimal
+  image_url      String?
+  pos_x          Float
+  pos_y          Float
+
+  lookbook       ShoppableLookbook @relation(fields: [lookbook_id], references: [id], onDelete: Cascade)
+
+  @@map("lookbook_tags")
+}
+
