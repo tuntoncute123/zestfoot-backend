@@ -25,17 +25,37 @@ export class ProductsService {
   ) {}
 
   // --- PRODUCTS ---
-  async getAllProducts(limit?: number, offset?: number) {
-    const cacheKey = `cache:products:all:${limit || 'all'}:${offset || 0}`;
+  async getAllProducts(params?: {
+    limit?: number;
+    offset?: number;
+    brand?: string;
+    category?: string;
+    gender?: string;
+    isNew?: boolean;
+    isSale?: boolean;
+    isTrending?: boolean;
+    isAsicsExclusive?: boolean;
+  }) {
+    const cacheKey = `cache:products:all:${JSON.stringify(params || {})}`;
     const cached = await this.redisService.get(cacheKey);
     if (cached) {
       this.logger.log(`Hit Redis cache for products list: ${cacheKey}`);
       return cached;
     }
 
-    const products = await this.queryBus.execute(new GetProductsQuery(limit, offset));
+    const products = await this.queryBus.execute(new GetProductsQuery(
+      params?.limit,
+      params?.offset,
+      params?.brand,
+      params?.category,
+      params?.gender,
+      params?.isNew,
+      params?.isSale,
+      params?.isTrending,
+      params?.isAsicsExclusive,
+    ));
     if (products) {
-      await this.redisService.set(cacheKey, products, 60); // 60s TTL
+      await this.redisService.set(cacheKey, products, 60);
     }
     return products;
   }

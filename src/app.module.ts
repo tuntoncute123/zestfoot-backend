@@ -9,6 +9,7 @@ import { AdminModule } from './admin/admin.module';
 import { WorldCupModule } from './worldcup/worldcup.module';
 import { AuthModule } from './auth/auth.module';
 import { AiModule } from './ai/ai.module';
+import { GhnModule } from './ghn/ghn.module';
 import { RedisModule } from './common/redis.module';
 import { appConfig } from './config/app.config';
 
@@ -23,6 +24,7 @@ import { appConfig } from './config/app.config';
     DatabaseModule,
     ProductsModule,
     OrdersModule,
+    GhnModule,
     ProfilesModule,
     WebSocketModule,
     AdminModule,

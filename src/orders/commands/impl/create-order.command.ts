@@ -13,6 +13,10 @@ export class CreateOrderCommand {
   public readonly voucher_discount?: number;
   public readonly voucher_code?: string;
   public readonly point_discount?: number;
+  public readonly tracking_code?: string;
+  public readonly carrier?: string;
+  public readonly shipping_timeline?: any;
+  public readonly user_id?: string;
 
   constructor(dto: CreateOrderDto) {
     Object.assign(this, dto);

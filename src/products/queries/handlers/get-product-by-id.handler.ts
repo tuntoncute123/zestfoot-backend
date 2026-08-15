@@ -79,13 +79,7 @@ export class GetProductByIdHandler implements IQueryHandler<GetProductByIdQuery>
         });
       }
 
-      // 5. Fallback to first available product if still not found
-      if (!product && allProducts.length > 0) {
-        product = allProducts[0];
-      }
-
       if (product) {
-        // Fetch reviews separately
         const reviews = await this.prisma.review.findMany({
           where: { product_id: product.id }
         });
@@ -98,7 +92,9 @@ export class GetProductByIdHandler implements IQueryHandler<GetProductByIdQuery>
     return {
       ...product,
       id: product.id.toString(),
+      brand_id: product.brand_id ? product.brand_id.toString() : null,
       price: product.price ? Number(product.price) : null,
+      costPrice: product.costPrice ? Number(product.costPrice) : null,
       salePrice: product.salePrice ? Number(product.salePrice) : null,
       reviews: product.reviews ? product.reviews.map(r => ({
         ...r,

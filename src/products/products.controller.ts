@@ -9,12 +9,39 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách tất cả sản phẩm' })
+  @ApiOperation({ summary: 'Lấy danh sách tất cả sản phẩm có bộ lọc' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Số lượng giới hạn' })
   @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Số lượng bỏ qua' })
+  @ApiQuery({ name: 'brand', required: false, type: String, description: 'Lọc theo thương hiệu' })
+  @ApiQuery({ name: 'category', required: false, type: String, description: 'Lọc theo danh mục' })
+  @ApiQuery({ name: 'gender', required: false, type: String, description: 'Lọc theo giới tính' })
+  @ApiQuery({ name: 'isNew', required: false, type: Boolean, description: 'Lọc hàng mới' })
+  @ApiQuery({ name: 'isSale', required: false, type: Boolean, description: 'Lọc hàng giảm giá' })
+  @ApiQuery({ name: 'isTrending', required: false, type: Boolean, description: 'Lọc hàng xu hướng' })
+  @ApiQuery({ name: 'isAsicsExclusive', required: false, type: Boolean, description: 'Lọc hàng độc quyền ASICS' })
   @ApiResponse({ status: 200, description: 'Danh sách sản phẩm được lấy thành công.' })
-  async getAll(@Query('limit') limit?: number, @Query('offset') offset?: number) {
-    return this.productsService.getAllProducts(limit ? Number(limit) : undefined, offset ? Number(offset) : undefined);
+  async getAll(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+    @Query('brand') brand?: string,
+    @Query('category') category?: string,
+    @Query('gender') gender?: string,
+    @Query('isNew') isNew?: string | boolean,
+    @Query('isSale') isSale?: string | boolean,
+    @Query('isTrending') isTrending?: string | boolean,
+    @Query('isAsicsExclusive') isAsicsExclusive?: string | boolean,
+  ) {
+    return this.productsService.getAllProducts({
+      limit: limit ? Number(limit) : undefined,
+      offset: offset ? Number(offset) : undefined,
+      brand,
+      category,
+      gender,
+      isNew: isNew !== undefined ? isNew === 'true' || isNew === true : undefined,
+      isSale: isSale !== undefined ? isSale === 'true' || isSale === true : undefined,
+      isTrending: isTrending !== undefined ? isTrending === 'true' || isTrending === true : undefined,
+      isAsicsExclusive: isAsicsExclusive !== undefined ? isAsicsExclusive === 'true' || isAsicsExclusive === true : undefined,
+    });
   }
 
   @Get('search')

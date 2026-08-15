@@ -7,6 +7,7 @@ import { CreateOrderHandler } from './commands/handlers/create-order.handler';
 import { CancelOrderHandler } from './commands/handlers/cancel-order.handler';
 
 import { OrdersService } from './orders.service';
+import { GhnModule } from '../ghn/ghn.module';
 
 export const QueryHandlers = [
   GetOrderByIdHandler,
@@ -19,7 +20,7 @@ export const CommandHandlers = [
 ];
 
 @Module({
-  imports: [CqrsModule],
+  imports: [CqrsModule, GhnModule],
   controllers: [OrdersController],
   providers: [
     OrdersService,

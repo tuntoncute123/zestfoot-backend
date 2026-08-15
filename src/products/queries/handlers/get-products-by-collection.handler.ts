@@ -11,11 +11,12 @@ export class GetProductsByCollectionHandler implements IQueryHandler<GetProducts
     
     let products = await this.prisma.product.findMany();
 
-    // Map BigInts for comparison/filtering and output
     let mapped = products.map(product => ({
       ...product,
       id: product.id.toString(),
+      brand_id: product.brand_id ? product.brand_id.toString() : null,
       price: product.price ? Number(product.price) : null,
+      costPrice: product.costPrice ? Number(product.costPrice) : null,
       salePrice: product.salePrice ? Number(product.salePrice) : null,
     }));
 
@@ -155,6 +156,8 @@ export class GetProductsByCollectionHandler implements IQueryHandler<GetProducts
         const badgesArr = p.badges ? (Array.isArray(p.badges) ? p.badges : []) : [];
         return badgesArr.includes('EXCLUSIVE');
       });
+    if (slug === 'asics' || slug === 'asics-lifewalker' || slug === 'lifewalker') {
+      return mapped.filter(p => (p.brand && p.brand.toLowerCase() === 'asics') || p.isAsicsExclusive || (p.name && p.name.toLowerCase().includes('lifewalker')));
     }
 
     // Brand match fallback

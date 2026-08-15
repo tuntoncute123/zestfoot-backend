@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { OrdersService } from './orders.service';
@@ -8,6 +8,13 @@ import { OrdersService } from './orders.service';
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
+
+  @Get('admin/statistics')
+  @ApiOperation({ summary: 'Thống kê tổng quan đơn hàng (Admin)' })
+  @ApiResponse({ status: 200, description: 'Dữ liệu thống kê doanh thu và đơn hàng.' })
+  async getStatistics() {
+    return this.ordersService.getAdminStatistics();
+  }
 
   @Get()
   @ApiOperation({ summary: 'Lấy toàn bộ danh sách đơn hàng (Quyền Admin)' })
@@ -58,5 +65,61 @@ export class OrdersController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy đơn hàng.' })
   async cancel(@Param('id') id: string, @Body() dto: CancelOrderDto) {
     return this.ordersService.cancelOrder(id, dto.reason);
+  }
+
+  @Post(':id/ghn-create')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Tạo vận đơn giao hàng GHN cho đơn hàng' })
+  @ApiParam({ name: 'id', type: String, description: 'ID đơn hàng' })
+  async pushToGhn(@Param('id') id: string, @Body() body: { note?: string; required_note?: string }) {
+    return this.ordersService.pushToGhn(id, body);
+  }
+
+  @Get(':id/tracking')
+  @ApiOperation({ summary: 'Lấy thông tin và hành trình giao vận GHN của đơn hàng' })
+  @ApiParam({ name: 'id', type: String, description: 'ID đơn hàng' })
+  async getTracking(@Param('id') id: string) {
+    return this.ordersService.getOrderTracking(id);
+  }
+
+  @Post(':id/sync-ghn')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Đồng bộ hành trình thời gian thực từ GHN' })
+  @ApiParam({ name: 'id', type: String, description: 'ID đơn hàng' })
+  async syncGhn(@Param('id') id: string) {
+    return this.ordersService.syncGhnTracking(id);
+  }
+
+  @Post(':id/reorder')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Lấy thông tin sản phẩm để mua lại (Re-order)' })
+  @ApiParam({ name: 'id', type: String, description: 'ID đơn hàng' })
+  async reorder(@Param('id') id: string) {
+    return this.ordersService.reorder(id);
+  }
+
+  @Post(':id/return-request')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Gửi yêu cầu đổi trả hàng / hoàn tiền' })
+  @ApiParam({ name: 'id', type: String, description: 'ID đơn hàng' })
+  async returnRequest(
+    @Param('id') id: string,
+    @Body() body: { reason: string; images?: string[] },
+  ) {
+    return this.ordersService.requestReturn(id, body.reason, body.images);
+  }
+
+  @Put(':id/confirm-receipt')
+  @ApiOperation({ summary: 'Khách hàng xác nhận đã nhận hàng thành công' })
+  @ApiParam({ name: 'id', type: String, description: 'ID đơn hàng' })
+  async confirmReceipt(@Param('id') id: string) {
+    return this.ordersService.confirmReceipt(id);
+  }
+
+  @Get(':id/invoice')
+  @ApiOperation({ summary: 'Xuất dữ liệu hóa đơn điện tử' })
+  @ApiParam({ name: 'id', type: String, description: 'ID đơn hàng' })
+  async getInvoice(@Param('id') id: string) {
+    return this.ordersService.getInvoice(id);
   }
 }

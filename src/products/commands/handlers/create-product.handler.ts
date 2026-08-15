@@ -28,7 +28,9 @@ export class CreateProductHandler implements ICommandHandler<CreateProductComman
     return {
       ...product,
       id: product.id.toString(),
+      brand_id: product.brand_id ? product.brand_id.toString() : null,
       price: product.price ? Number(product.price) : null,
+      costPrice: product.costPrice ? Number(product.costPrice) : null,
       salePrice: product.salePrice ? Number(product.salePrice) : null,
     };
   }

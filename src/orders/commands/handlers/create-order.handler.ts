@@ -21,6 +21,10 @@ export class CreateOrderHandler implements ICommandHandler<CreateOrderCommand> {
         voucher_discount: command.voucher_discount ?? 0,
         voucher_code: command.voucher_code ?? null,
         point_discount: command.point_discount ?? 0,
+        tracking_code: command.tracking_code ?? null,
+        carrier: command.carrier ?? null,
+        shipping_timeline: command.shipping_timeline ?? null,
+        user_id: command.user_id ?? null,
       },
     });
 

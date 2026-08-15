@@ -69,4 +69,23 @@ export class CreateOrderDto {
   @IsNumber()
   @IsOptional()
   point_discount?: number;
+
+  @ApiPropertyOptional({ description: 'Mã vận đơn (GHN, GHTK, ...)', example: 'GHN12345678' })
+  @IsString()
+  @IsOptional()
+  tracking_code?: string;
+
+  @ApiPropertyOptional({ description: 'Đơn vị vận chuyển', example: 'GHN' })
+  @IsString()
+  @IsOptional()
+  carrier?: string;
+
+  @ApiPropertyOptional({ description: 'Lịch trình vận chuyển (JSON)' })
+  @IsOptional()
+  shipping_timeline?: any;
+
+  @ApiPropertyOptional({ description: 'ID người dùng (UUID)' })
+  @IsString()
+  @IsOptional()
+  user_id?: string;
 }
