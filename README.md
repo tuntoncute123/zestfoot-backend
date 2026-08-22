@@ -1,6 +1,6 @@
 # ZestFoot Main Server (Backend & AI Microservice)
 
-This repository contains the backend systems for ZestFoot, which includes a NestJS server (with Prisma/CQRS, QuestDB, Redis, and PostgreSQL integration) and a Python Gemini AI microservice.
+This repository contains the backend systems for ZestFoot, which includes a NestJS server (with Prisma/CQRS, QuestDB, Redis, and PostgreSQL integration) and a Python Ollama AI microservice.
 
 ## Directory Structure
 - `/src`: NestJS source code (controllers, modules, services, DTOs).

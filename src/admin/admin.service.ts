@@ -1,33 +1,38 @@
-import { Injectable, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
-import { QueryTableDto } from './dto/query-table.dto';
-import { InsertIntoTableDto } from './dto/insert-into-table.dto';
-import { UpdateTableDto } from './dto/update-table.dto';
-import { DeleteFromTableDto } from './dto/delete-from-table.dto';
-import { serializeData } from '../common/utils/db-serialization';
-import { ConfigService } from '@nestjs/config';
-import { AppGateway } from '../websocket/app.gateway';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+} from "@nestjs/common";
+import { PrismaService } from "../database/prisma.service";
+import { QueryTableDto } from "./dto/query-table.dto";
+import { InsertIntoTableDto } from "./dto/insert-into-table.dto";
+import { UpdateTableDto } from "./dto/update-table.dto";
+import { DeleteFromTableDto } from "./dto/delete-from-table.dto";
+import { serializeData } from "../common/utils/db-serialization";
+import { ConfigService } from "@nestjs/config";
+import { AppGateway } from "../websocket/app.gateway";
 // Helpers
-import { computeMiningData } from './helpers/mining.helper';
+import { computeMiningData } from "./helpers/mining.helper";
 import {
   computeLocalDemandForecasting,
   computeLocalCustomerMlScores,
   computeLocalRecommendations,
-} from './helpers/ml.helper';
-import { computeAnalytics } from './helpers/analytics.helper';
+} from "./helpers/ml.helper";
+import { computeAnalytics } from "./helpers/analytics.helper";
 import {
   buildCopilotSystemPrompt,
   compileCopilotContext,
   formatDemandForecast,
   formatCustomerMlScores,
   getMlFallbackTexts,
-} from './helpers/copilot.helper';
+} from "./helpers/copilot.helper";
 
 import {
   buildAutoContentPrompt,
   cleanAndParseAutoContent,
   getFallbackAutoContent,
-} from './helpers/content.helper';
+} from "./helpers/content.helper";
 
 @Injectable()
 export class AdminService {
@@ -55,24 +60,24 @@ export class AdminService {
 
   private getModel(tableName: string): any {
     const mapping: Record<string, string> = {
-      brands: 'brand',
-      products: 'product',
-      news: 'news',
-      orders: 'order',
-      profiles: 'profile',
-      point_transactions: 'pointTransaction',
-      user_vouchers: 'userVoucher',
-      coupons: 'coupon',
-      social_posts: 'socialPost',
-      social_comments: 'socialComment',
-      social_reactions: 'socialReaction',
-      reviews: 'review',
-      game_leaderboard: 'gameLeaderboard',
-      campaign_prizes: 'campaignPrize',
-      qr_tickets: 'qrTicket',
-      spin_history: 'spinHistory',
-      user_badges: 'userBadge',
-      user_badge_claims: 'userBadgeClaim',
+      brands: "brand",
+      products: "product",
+      news: "news",
+      orders: "order",
+      profiles: "profile",
+      point_transactions: "pointTransaction",
+      user_vouchers: "userVoucher",
+      coupons: "coupon",
+      social_posts: "socialPost",
+      social_comments: "socialComment",
+      social_reactions: "socialReaction",
+      reviews: "review",
+      game_leaderboard: "gameLeaderboard",
+      campaign_prizes: "campaignPrize",
+      qr_tickets: "qrTicket",
+      spin_history: "spinHistory",
+      user_badges: "userBadge",
+      user_badge_claims: "userBadgeClaim",
     };
 
     const modelName = mapping[tableName.toLowerCase()];
@@ -86,19 +91,27 @@ export class AdminService {
   async queryTable(body: QueryTableDto) {
     try {
       if (!body?.table) {
-        throw new BadRequestException('Thiếu tên bảng (table) trong request body');
+        throw new BadRequestException(
+          "Thiếu tên bảng (table) trong request body",
+        );
       }
       const tableNameLower = body.table.toLowerCase();
 
       // 1. Intercept Virtual DWH tables
-      if (tableNameLower === 'fact_sales') {
+      if (tableNameLower === "fact_sales") {
         const orders = await this.prisma.order.findMany();
         const sales = [];
         for (const order of orders) {
-          const customer = typeof order.customer === 'string' ? JSON.parse(order.customer) : order.customer;
-          const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-          
-          for (const item of (items || [])) {
+          const customer =
+            typeof order.customer === "string"
+              ? JSON.parse(order.customer)
+              : order.customer;
+          const items =
+            typeof order.items === "string"
+              ? JSON.parse(order.items)
+              : order.items;
+
+          for (const item of items || []) {
             sales.push({
               order_id: order.id.toString(),
               order_status: order.status,
@@ -107,17 +120,20 @@ export class AdminService {
               order_voucher_discount: Number(order.voucher_discount) || 0,
               order_point_discount: Number(order.point_discount) || 0,
               order_shipping_fee: Number(order.shipping_fee) || 0,
-              order_date: order.created_at ? order.created_at.toISOString() : new Date().toISOString(),
+              order_date: order.created_at
+                ? order.created_at.toISOString()
+                : new Date().toISOString(),
               user_id: customer?.id || customer?.userId || null,
               customer_email: customer?.email || null,
               product_id: item.product_id ? item.product_id.toString() : null,
-              product_name: item.name || item.product_name || '',
+              product_name: item.name || item.product_name || "",
               brand: item.brand || null,
               price: Number(item.price) || 0,
               quantity: Number(item.quantity) || 1,
-              size: item.size || 'N/A',
-              gross_revenue: (Number(item.price) || 0) * (Number(item.quantity) || 1),
-              payment_method: order.payment_method || 'cod',
+              size: item.size || "N/A",
+              gross_revenue:
+                (Number(item.price) || 0) * (Number(item.quantity) || 1),
+              payment_method: order.payment_method || "cod",
             });
           }
         }
@@ -127,11 +143,11 @@ export class AdminService {
         };
       }
 
-      if (tableNameLower === 'fact_customer_engagement') {
+      if (tableNameLower === "fact_customer_engagement") {
         const pointTransactions = await this.prisma.pointTransaction.findMany();
-        const engagement = pointTransactions.map(t => ({
-          event_type: t.type === 'earn' ? 'point_earn' : 'point_spend',
-          point_value: t.type === 'earn' ? t.amount : -t.amount,
+        const engagement = pointTransactions.map((t) => ({
+          event_type: t.type === "earn" ? "point_earn" : "point_spend",
+          point_value: t.type === "earn" ? t.amount : -t.amount,
           user_id: t.user_id,
           reason: t.reason,
           created_at: t.created_at.toISOString(),
@@ -142,9 +158,9 @@ export class AdminService {
         };
       }
 
-      if (tableNameLower === 'dim_products') {
+      if (tableNameLower === "dim_products") {
         const dbProducts = await this.prisma.product.findMany();
-        const dimProducts = dbProducts.map(p => ({
+        const dimProducts = dbProducts.map((p) => ({
           product_id: p.id.toString(),
           name: p.name,
           brand: p.brand,
@@ -165,7 +181,12 @@ export class AdminService {
       if (body.eq) {
         const where: any = {};
         for (const [k, v] of Object.entries(body.eq)) {
-          if (k === 'price' || k === 'salePrice' || k === 'product_id' || k === 'id') {
+          if (
+            k === "price" ||
+            k === "salePrice" ||
+            k === "product_id" ||
+            k === "id"
+          ) {
             const isNumeric = /^\d+$/.test(String(v));
             if (isNumeric) {
               where[k] = BigInt(String(v));
@@ -182,18 +203,18 @@ export class AdminService {
       if (body.ilike) {
         const where = findOptions.where || {};
         for (const [k, v] of Object.entries(body.ilike)) {
-          const cleanPattern = v.replace(/%/g, '');
+          const cleanPattern = v.replace(/%/g, "");
           where[k] = {
             contains: cleanPattern,
-            mode: 'insensitive',
+            mode: "insensitive",
           };
         }
         findOptions.where = where;
       }
 
       if (body.orderBy) {
-        findOptions.orderBy = body.orderBy.map(order => ({
-          [order.column]: order.ascending ? 'asc' : 'desc',
+        findOptions.orderBy = body.orderBy.map((order) => ({
+          [order.column]: order.ascending ? "asc" : "desc",
         }));
       }
 
@@ -205,9 +226,12 @@ export class AdminService {
         findOptions.take = body.range.to - body.range.from + 1;
       }
 
-      if (tableNameLower === 'user_vouchers' || tableNameLower === 'point_transactions') {
+      if (
+        tableNameLower === "user_vouchers" ||
+        tableNameLower === "point_transactions"
+      ) {
         findOptions.include = { profile: true };
-      } else if (tableNameLower === 'reviews') {
+      } else if (tableNameLower === "reviews") {
         findOptions.include = { product: true };
       }
 
@@ -224,7 +248,10 @@ export class AdminService {
       const serialized = serializeData(records);
       let finalData = serialized;
 
-      if (tableNameLower === 'user_vouchers' || tableNameLower === 'point_transactions') {
+      if (
+        tableNameLower === "user_vouchers" ||
+        tableNameLower === "point_transactions"
+      ) {
         finalData = serialized.map((r: any) => {
           const { profile, ...rest } = r;
           return {
@@ -232,7 +259,7 @@ export class AdminService {
             profiles: profile,
           };
         });
-      } else if (tableNameLower === 'reviews') {
+      } else if (tableNameLower === "reviews") {
         finalData = serialized.map((r: any) => {
           const { product, ...rest } = r;
           return {
@@ -254,8 +281,13 @@ export class AdminService {
         count: count,
       };
     } catch (error) {
-      this.logger.error(`Error querying table ${body?.table}: ${error.message}`, error.stack);
-      throw new InternalServerErrorException(error.message || 'Lỗi truy vấn cơ sở dữ liệu.');
+      this.logger.error(
+        `Error querying table ${body?.table}: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        error.message || "Lỗi truy vấn cơ sở dữ liệu.",
+      );
     }
   }
 
@@ -266,7 +298,12 @@ export class AdminService {
       for (const row of body.data) {
         const cleanedRow: any = {};
         for (const [k, v] of Object.entries(row)) {
-          if (k === 'price' || k === 'salePrice' || k === 'product_id' || k === 'id') {
+          if (
+            k === "price" ||
+            k === "salePrice" ||
+            k === "product_id" ||
+            k === "id"
+          ) {
             const isNumeric = /^\d+$/.test(String(v));
             if (isNumeric) {
               cleanedRow[k] = BigInt(String(v));
@@ -282,8 +319,13 @@ export class AdminService {
       }
       return inserted;
     } catch (error) {
-      this.logger.error(`Error inserting into table ${body.table}: ${error.message}`, error.stack);
-      throw new InternalServerErrorException(error.message || 'Lỗi nạp dữ liệu.');
+      this.logger.error(
+        `Error inserting into table ${body.table}: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        error.message || "Lỗi nạp dữ liệu.",
+      );
     }
   }
 
@@ -300,7 +342,12 @@ export class AdminService {
 
       const cleanedData: any = {};
       for (const [k, v] of Object.entries(body.data)) {
-        if (k === 'price' || k === 'salePrice' || k === 'product_id' || k === 'id') {
+        if (
+          k === "price" ||
+          k === "salePrice" ||
+          k === "product_id" ||
+          k === "id"
+        ) {
           const isNumeric = /^\d+$/.test(String(v));
           if (isNumeric) {
             cleanedData[k] = BigInt(String(v));
@@ -318,8 +365,13 @@ export class AdminService {
       });
       return serializeData(updated);
     } catch (error) {
-      this.logger.error(`Error updating table ${body.table} (ID ${body.id}): ${error.message}`, error.stack);
-      throw new InternalServerErrorException(error.message || 'Lỗi cập nhật dữ liệu.');
+      this.logger.error(
+        `Error updating table ${body.table} (ID ${body.id}): ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        error.message || "Lỗi cập nhật dữ liệu.",
+      );
     }
   }
 
@@ -341,35 +393,48 @@ export class AdminService {
         for (const [key, value] of Object.entries(body.filters)) {
           if (value !== undefined && value !== null) {
             const isNumericVal = /^\d+$/.test(String(value));
-            where[key] = isNumericVal && typeof value !== 'string' ? BigInt(String(value)) : value;
+            where[key] =
+              isNumericVal && typeof value !== "string"
+                ? BigInt(String(value))
+                : value;
           }
         }
         const deleted = await model.deleteMany({ where });
         return serializeData(deleted);
       } else {
-        throw new BadRequestException('Cần cung cấp id hoặc filters để xóa dữ liệu.');
+        throw new BadRequestException(
+          "Cần cung cấp id hoặc filters để xóa dữ liệu.",
+        );
       }
 
       const deleted = await model.delete({ where });
       return serializeData(deleted);
     } catch (error) {
-      this.logger.error(`Error deleting from table ${body.table} (ID ${body.id}): ${error.message}`, error.stack);
-      throw new InternalServerErrorException(error.message || 'Lỗi xóa dữ liệu.');
+      this.logger.error(
+        `Error deleting from table ${body.table} (ID ${body.id}): ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        error.message || "Lỗi xóa dữ liệu.",
+      );
     }
   }
 
   // --- 1. Association Rule & Data Mining ---
   async getMiningData() {
-    const cacheKey = 'mining_data';
+    const cacheKey = "mining_data";
     const cached = this.getCachedData(cacheKey);
     if (cached) {
-      this.logger.log('Returning cached mining data');
+      this.logger.log("Returning cached mining data");
       return cached;
     }
 
     try {
       const [orders, reviews, products] = await Promise.all([
-        this.prisma.order.findMany({ orderBy: { created_at: 'desc' }, take: 500 }),
+        this.prisma.order.findMany({
+          orderBy: { created_at: "desc" },
+          take: 500,
+        }),
         this.prisma.review.findMany({ include: { product: true }, take: 500 }),
         this.prisma.product.findMany(),
       ]);
@@ -378,14 +443,18 @@ export class AdminService {
       this.setCachedData(cacheKey, result);
       return result;
     } catch (error) {
-      this.logger.error('Error generating data mining results:', error);
-      throw new InternalServerErrorException(error.message || 'Lỗi xử lý Data Mining.');
+      this.logger.error("Error generating data mining results:", error);
+      throw new InternalServerErrorException(
+        error.message || "Lỗi xử lý Data Mining.",
+      );
     }
   }
 
   // --- 2. Copilot planning & LLM Query ---
   async copilot(messages: any[], sessionMetadata?: any) {
-    const pythonUrl = this.configService.get<string>('PYTHON_SERVICE_URL') || 'http://127.0.0.1:8000';
+    const pythonUrl =
+      this.configService.get<string>("PYTHON_SERVICE_URL") ||
+      "http://127.0.0.1:8000";
     try {
       const [sales, engagement, vouchers, reviews] = await Promise.all([
         this.prisma.order.findMany(),
@@ -394,15 +463,11 @@ export class AdminService {
         this.prisma.review.findMany({ include: { product: true } }),
       ]);
 
-      const { kpiStatsText, gameRoiText, reviewIssuesText } = compileCopilotContext(
-        sales,
-        engagement,
-        vouchers,
-        reviews,
-      );
+      const { kpiStatsText, gameRoiText, reviewIssuesText } =
+        compileCopilotContext(sales, engagement, vouchers, reviews);
 
-      let demandForecastText = 'Chưa cấu hình dịch vụ Python ML.';
-      let customerMlText = 'Chưa cấu hình dịch vụ Python ML.';
+      let demandForecastText = "Chưa cấu hình dịch vụ Python ML.";
+      let customerMlText = "Chưa cấu hình dịch vụ Python ML.";
       try {
         const mlRes = await fetch(`${pythonUrl}/api/ml/analytics`);
         if (mlRes.ok) {
@@ -411,21 +476,27 @@ export class AdminService {
           customerMlText = formatCustomerMlScores(mlData.customerScores);
         }
       } catch (e: any) {
-        this.logger.warn('Failed to contact Python ML service:', e.message);
+        this.logger.warn("Failed to contact Python ML service:", e.message);
         const fallbacks = getMlFallbackTexts();
         demandForecastText = fallbacks.demandForecastText;
         customerMlText = fallbacks.customerMlText;
       }
 
-      const systemPrompt = buildCopilotSystemPrompt(kpiStatsText, gameRoiText, demandForecastText, customerMlText, reviewIssuesText);
-      const lastMessage = messages[messages.length - 1]?.content || '';
+      const systemPrompt = buildCopilotSystemPrompt(
+        kpiStatsText,
+        gameRoiText,
+        demandForecastText,
+        customerMlText,
+        reviewIssuesText,
+      );
+      const lastMessage = messages[messages.length - 1]?.content || "";
       const messageToSend = !sessionMetadata
         ? `${systemPrompt}\n\n[ADMIN QUESTION]:\n${lastMessage}`
         : lastMessage;
 
       const response = await fetch(`${pythonUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: messageToSend,
           session_metadata: sessionMetadata || null,
@@ -442,41 +513,56 @@ export class AdminService {
         sessionMetadata: pyData.session_metadata,
       };
     } catch (error) {
-      this.logger.error('Error running Copilot query:', error);
-      throw new InternalServerErrorException(error.message || 'Lỗi xử lý Copilot.');
+      this.logger.error("Error running Copilot query:", error);
+      throw new InternalServerErrorException(
+        error.message || "Lỗi xử lý Copilot.",
+      );
     }
   }
 
   // --- 3. AI Service Health ---
   async getAiHealth() {
-    const pythonUrl = this.configService.get<string>('app.pythonServiceUrl') || 'http://127.0.0.1:8000';
+    const pythonUrl =
+      this.configService.get<string>("app.pythonServiceUrl") ||
+      "http://127.0.0.1:8000";
     try {
-      const res = await fetch(`${pythonUrl}/health`, { method: 'GET', signal: AbortSignal.timeout(2000) });
+      const res = await fetch(`${pythonUrl}/health`, {
+        method: "GET",
+        signal: AbortSignal.timeout(2000),
+      });
       if (res.ok) {
         return await res.json();
       }
-      return { status: 'unhealthy', error: `FastAPI status: ${res.status}` };
+      return { status: "unhealthy", error: `FastAPI status: ${res.status}` };
     } catch (e) {
-      return { status: 'offline', error: e.message };
+      return { status: "offline", error: e.message };
     }
   }
 
   // --- 4. Machine Learning Forecast & Personalization ---
   async getMlAnalytics(email?: string, limit = 5) {
-    const pythonUrl = this.configService.get<string>('app.pythonServiceUrl') || 'http://127.0.0.1:8000';
+    const pythonUrl =
+      this.configService.get<string>("app.pythonServiceUrl") ||
+      "http://127.0.0.1:8000";
     let backendUrl = `${pythonUrl}/api/ml/analytics`;
     if (email) {
       backendUrl = `${pythonUrl}/api/ml/recommend?email=${encodeURIComponent(email)}&limit=${limit}`;
     }
 
     try {
-      const res = await fetch(backendUrl, { method: 'GET', signal: AbortSignal.timeout(4000) });
+      const res = await fetch(backendUrl, {
+        method: "GET",
+        signal: AbortSignal.timeout(4000),
+      });
       if (!res.ok) {
         return this.runLocalMlFallback(email, limit);
       }
       return await res.json();
     } catch (error) {
-      this.logger.warn('Failed to connect to Python ML service, using local fallback:', error.message);
+      this.logger.warn(
+        "Failed to connect to Python ML service, using local fallback:",
+        error.message,
+      );
       return this.runLocalMlFallback(email, limit);
     }
   }
@@ -494,39 +580,61 @@ export class AdminService {
 
   private async getLocalDemandForecasting() {
     const [orders, products] = await Promise.all([
-      this.prisma.order.findMany({ orderBy: { created_at: 'desc' }, take: 1000 }),
+      this.prisma.order.findMany({
+        orderBy: { created_at: "desc" },
+        take: 1000,
+      }),
       this.prisma.product.findMany({ take: 1000 }),
     ]);
     return computeLocalDemandForecasting(orders, products);
   }
 
   private async getLocalCustomerMlScores() {
-    const orders = await this.prisma.order.findMany({ orderBy: { created_at: 'desc' }, take: 1000 });
+    const orders = await this.prisma.order.findMany({
+      orderBy: { created_at: "desc" },
+      take: 1000,
+    });
     return computeLocalCustomerMlScores(orders);
   }
 
   private async getLocalRecommendations(userEmail: string, limit = 5) {
     const [orders, reviews, products] = await Promise.all([
-      this.prisma.order.findMany({ orderBy: { created_at: 'desc' }, take: 1000 }),
-      this.prisma.review.findMany({ orderBy: { created_at: 'desc' }, take: 1000 }),
+      this.prisma.order.findMany({
+        orderBy: { created_at: "desc" },
+        take: 1000,
+      }),
+      this.prisma.review.findMany({
+        orderBy: { created_at: "desc" },
+        take: 1000,
+      }),
       this.prisma.product.findMany({ take: 1000 }),
     ]);
-    return computeLocalRecommendations(orders, reviews, products, userEmail, limit);
+    return computeLocalRecommendations(
+      orders,
+      reviews,
+      products,
+      userEmail,
+      limit,
+    );
   }
 
   // --- 5. Custom Business Dashboard Data (DWH Analytics) ---
-  async getAnalytics(brandFilter = 'all') {
+  async getAnalytics(brandFilter = "all") {
     const cacheKey = `analytics_data_${brandFilter.toLowerCase()}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) {
-      this.logger.log(`Returning cached analytics data for brand ${brandFilter}`);
+      this.logger.log(
+        `Returning cached analytics data for brand ${brandFilter}`,
+      );
       return cached;
     }
 
     try {
-      const salesRes = await this.queryTable({ table: 'fact_sales' });
-      const engagementRes = await this.queryTable({ table: 'fact_customer_engagement' });
-      const dimProductsRes = await this.queryTable({ table: 'dim_products' });
+      const salesRes = await this.queryTable({ table: "fact_sales" });
+      const engagementRes = await this.queryTable({
+        table: "fact_customer_engagement",
+      });
+      const dimProductsRes = await this.queryTable({ table: "dim_products" });
 
       const sales = salesRes.data || [];
       const engagement = engagementRes.data || [];
@@ -540,29 +648,41 @@ export class AdminService {
         },
       });
 
-      const result = computeAnalytics(sales, engagement, products, vouchers, reviews, brandFilter);
+      const result = computeAnalytics(
+        sales,
+        engagement,
+        products,
+        vouchers,
+        reviews,
+        brandFilter,
+      );
       this.setCachedData(cacheKey, result);
       return result;
     } catch (error) {
-      this.logger.error('Error compiling analytics:', error);
-      throw new InternalServerErrorException(error.message || 'Lỗi xử lý thống kê analytics.');
+      this.logger.error("Error compiling analytics:", error);
+      throw new InternalServerErrorException(
+        error.message || "Lỗi xử lý thống kê analytics.",
+      );
     }
   }
 
   // --- 6. AI Auto Marketing Generation ---
   async autoContent() {
     // Start background processing immediately
-    this.logger.log('Starting AI Auto Marketing Content generation in background...');
+    this.logger.log(
+      "Starting AI Auto Marketing Content generation in background...",
+    );
     setTimeout(() => {
       this.runAutoContentInBackground().catch((err) => {
-        this.logger.error('Background auto-content generation failed:', err);
+        this.logger.error("Background auto-content generation failed:", err);
       });
     }, 0);
 
     return {
       success: true,
       pending: true,
-      message: 'Hệ thống AI đang khởi chạy viết bài và tạo ảnh ngầm. Kết quả sẽ được cập nhật và gửi thông báo qua WebSockets sau vài giây.',
+      message:
+        "Hệ thống AI đang khởi chạy viết bài và tạo ảnh ngầm. Kết quả sẽ được cập nhật và gửi thông báo qua WebSockets sau vài giây.",
     };
   }
 
@@ -570,22 +690,25 @@ export class AdminService {
     try {
       const products = await this.prisma.product.findMany();
       if (!products || products.length === 0) {
-        throw new Error('Không tìm thấy sản phẩm nào trong cửa hàng.');
+        throw new Error("Không tìm thấy sản phẩm nào trong cửa hàng.");
       }
 
       let candidates = products.filter(
-        p => p.category === 'shoes' && 
-        p.name && 
-        p.image && 
-        (p.isTrending === true || p.isNew === true || p.isSale === true)
+        (p) =>
+          p.category === "shoes" &&
+          p.name &&
+          p.image &&
+          (p.isTrending === true || p.isNew === true || p.isSale === true),
       );
 
       if (candidates.length === 0) {
-        candidates = products.filter(p => p.category === 'shoes' && p.name && p.image);
+        candidates = products.filter(
+          (p) => p.category === "shoes" && p.name && p.image,
+        );
       }
 
       if (candidates.length === 0) {
-        candidates = products.filter(p => p.name && p.image);
+        candidates = products.filter((p) => p.name && p.image);
       }
 
       const product = candidates[Math.floor(Math.random() * candidates.length)];
@@ -594,24 +717,26 @@ export class AdminService {
         where: { is_active: true },
       });
 
-      let couponText = '';
+      let couponText = "";
       if (coupons && coupons.length > 0) {
         couponText = coupons
           .map(
             (c) =>
               `Mã "${c.code}" (${
-                c.discount_type === 'percent' ? `${c.discount_value}%` : `${Number(c.discount_value).toLocaleString('vi-VN')}đ`
-              }${c.min_order_value ? `, đơn tối thiểu ${Number(c.min_order_value).toLocaleString('vi-VN')}đ` : ''})`
+                c.discount_type === "percent"
+                  ? `${c.discount_value}%`
+                  : `${Number(c.discount_value).toLocaleString("vi-VN")}đ`
+              }${c.min_order_value ? `, đơn tối thiểu ${Number(c.min_order_value).toLocaleString("vi-VN")}đ` : ""})`,
           )
-          .join(', ');
+          .join(", ");
       }
 
       let userId: string | null = null;
       const adminProfile = await this.prisma.profile.findFirst({
         where: {
           full_name: {
-            contains: 'admin',
-            mode: 'insensitive',
+            contains: "admin",
+            mode: "insensitive",
           },
         },
       });
@@ -626,7 +751,9 @@ export class AdminService {
       }
 
       if (!userId) {
-        throw new Error('Không tìm thấy profile người dùng nào để đăng bài trên cộng đồng.');
+        throw new Error(
+          "Không tìm thấy profile người dùng nào để đăng bài trên cộng đồng.",
+        );
       }
 
       const prompt = buildAutoContentPrompt(product, couponText);
@@ -634,12 +761,14 @@ export class AdminService {
       let aiContent: any = null;
       let generatedImage: string | null = null;
 
-      const pythonUrl = this.configService.get<string>('app.pythonServiceUrl') || 'http://127.0.0.1:8000';
+      const pythonUrl =
+        this.configService.get<string>("app.pythonServiceUrl") ||
+        "http://127.0.0.1:8000";
       try {
         const response = await fetch(`${pythonUrl}/api/chat`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             message: prompt,
@@ -649,20 +778,25 @@ export class AdminService {
 
         if (response.ok) {
           const pyData = await response.json();
-          const responseText = (pyData.reply || '').trim();
+          const responseText = (pyData.reply || "").trim();
           generatedImage = pyData.generated_image || null;
           aiContent = cleanAndParseAutoContent(responseText);
         }
       } catch (e: any) {
-        this.logger.warn(`Python AI service is offline or returned error: ${e.message}`);
+        this.logger.warn(
+          `Python AI service is offline or returned error: ${e.message}`,
+        );
       }
 
       if (!aiContent) {
         aiContent = getFallbackAutoContent(product);
       }
 
-      const postImage = generatedImage || product.image || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=600';
-      const currentDate = new Date().toISOString().split('T')[0];
+      const postImage =
+        generatedImage ||
+        product.image ||
+        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=600";
+      const currentDate = new Date().toISOString().split("T")[0];
 
       const newBlog = await this.prisma.news.create({
         data: {
@@ -694,13 +828,18 @@ export class AdminService {
         },
       };
 
-      this.logger.log('AI Auto Marketing Content generated successfully. Broadcasting update...');
-      this.appGateway.server.emit('autoContentCreated', result);
+      this.logger.log(
+        "AI Auto Marketing Content generated successfully. Broadcasting update...",
+      );
+      this.appGateway.server.emit("autoContentCreated", result);
     } catch (error: any) {
-      this.logger.error('Background auto-content generation failed:', error.message);
-      this.appGateway.server.emit('autoContentCreated', {
+      this.logger.error(
+        "Background auto-content generation failed:",
+        error.message,
+      );
+      this.appGateway.server.emit("autoContentCreated", {
         success: false,
-        error: error.message || 'Lỗi tự động tạo bài viết.',
+        error: error.message || "Lỗi tự động tạo bài viết.",
       });
     }
   }
