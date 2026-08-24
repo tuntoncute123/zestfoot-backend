@@ -97,4 +97,16 @@ export class AdminController {
   ) {
     return this.adminService.getMlAnalytics(email, limit);
   }
+
+  @Get("smart-pricing")
+  @ApiOperation({ summary: "Báo cáo biên lợi nhuận và gợi ý định giá thông minh AI" })
+  async getSmartPricing() {
+    return this.adminService.getSmartPricing();
+  }
+
+  @Post("smart-pricing")
+  @ApiOperation({ summary: "Thực thi điều chỉnh giá (Clearance / Surge Pricing)" })
+  async handleSmartPricingAction(@Body() body: any) {
+    return this.adminService.handleSmartPricingAction(body);
+  }
 }

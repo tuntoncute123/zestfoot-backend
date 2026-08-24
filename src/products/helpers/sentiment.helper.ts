@@ -53,7 +53,7 @@ Chú ý: chỉ trả về mã JSON, không thêm bất kỳ văn bản nào bên
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
       }),
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!res.ok) {
@@ -72,8 +72,8 @@ Chú ý: chỉ trả về mã JSON, không thêm bất kỳ văn bản nào bên
         sentiment_explanation: parsedResult.explanation || parsedResult.sentiment_explanation || 'Phân tích thành công bằng Ollama Local.',
       };
     }
-  } catch (error) {
-    logger.warn(`Ollama sentiment analysis failed: ${error.message}`);
+  } catch (error: any) {
+    logger.warn(`Ollama sentiment analysis notice: ${error.message}`);
   }
   return null;
 }
@@ -119,7 +119,7 @@ Chú ý: Phản hồi PHẢI là chuỗi JSON hợp lệ, không chứa thêm b�
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2,
       }),
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!res.ok) {
@@ -135,8 +135,9 @@ Chú ý: Phản hồi PHẢI là chuỗi JSON hợp lệ, không chứa thêm b�
       return parsedSummary;
     }
     throw new Error('JSON structure did not match expected schema');
-  } catch (error) {
-    logger.error('Error generating AI sentiment summary:', error);
+  } catch (error: any) {
+    logger.warn(`AI sentiment summary fallback active (${error.message}). Using standard heuristics.`);
     return defaultSummary;
   }
 }
+
