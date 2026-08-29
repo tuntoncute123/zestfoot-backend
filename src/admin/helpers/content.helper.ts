@@ -74,6 +74,6 @@ export function getFallbackAutoContent(product: any): any {
     blog_title: `Giới thiệu siêu phẩm ${product.name} từ thương hiệu ${product.brand}`,
     blog_excerpt: `Khám phá ngay đôi giày thể thao ${product.name} chất lượng cao, mang lại trải nghiệm êm ái tuyệt vời.`,
     blog_content: `### Thiết kế năng động, thời thượng\n\nĐôi giày **${product.name}** của thương hiệu **${product.brand}** là sự kết hợp hoàn hảo giữa thời trang và hiệu năng. Sử dụng chất liệu cao cấp thoáng khí, đôi giày này mang lại sự thoải mái tối đa cho cả ngày dài vận động.\n\n### Công nghệ đệm êm ái vượt trội\n\nĐược trang bị công nghệ đế tiên tiến nhất, hỗ trợ giảm chấn rung cực tốt, bảo vệ đôi chân của bạn trên mọi cung đường chạy bộ hay dạo phố.`,
-    social_caption: `🔥 Siêu phẩm ${product.name} đã cập bến ZestFoot! Thiết kế thời thượng, êm ái nâng niu từng bước chân. Mua ngay hôm nay! #ZestFoot #giaythethao #${product.brand}`,
+    social_caption: `Siêu phẩm ${product.name} đã cập bến ZestFoot! Thiết kế thời thượng, êm ái nâng niu từng bước chân. Mua ngay hôm nay! #ZestFoot #giaythethao #${product.brand}`,
   };
 }

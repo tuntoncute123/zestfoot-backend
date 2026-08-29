@@ -43,16 +43,16 @@ async function resetSequences(prisma) {
 }
 
 async function main() {
-  console.log('🚀 Bắt đầu quá trình seed dữ liệu 100+ bản ghi cho Admin Analytics...');
+  console.log('Bắt đầu quá trình seed dữ liệu 100+ bản ghi cho Admin Analytics...');
   await resetSequences(prisma);
 
   
   let existingProfiles = await prisma.profile.findMany();
-  console.log(`📌 Profiles hiện có: ${existingProfiles.length}`);
+  console.log(`Profiles hiện có: ${existingProfiles.length}`);
 
   const neededProfiles = Math.max(0, 105 - existingProfiles.length);
   if (neededProfiles > 0) {
-    console.log(`➕ Đang tạo thêm ${neededProfiles} profiles mới...`);
+    console.log(`Đang tạo thêm ${neededProfiles} profiles mới...`);
     const newProfilesData = [];
     for (let i = 0; i < neededProfiles; i++) {
       const fullName = generateVietnameseName();
@@ -76,7 +76,7 @@ async function main() {
     }
     await prisma.profile.createMany({ data: newProfilesData });
     existingProfiles = await prisma.profile.findMany();
-    console.log(`✅ Profiles sau khi bổ sung: ${existingProfiles.length}`);
+    console.log(`Profiles sau khi bổ sung: ${existingProfiles.length}`);
   }
 
   const profileIds = existingProfiles.map(p => p.id);
@@ -84,12 +84,12 @@ async function main() {
   
   const existingProducts = await prisma.product.findMany();
   const existingOrders = await prisma.order.findMany();
-  console.log(`📌 Products hiện có: ${existingProducts.length}, Orders hiện có: ${existingOrders.length}`);
+  console.log(`Products hiện có: ${existingProducts.length}, Orders hiện có: ${existingOrders.length}`);
 
   
   const existingOrderItemsCount = await prisma.orderItem.count();
   if (existingOrderItemsCount < 100 && existingOrders.length > 0 && existingProducts.length > 0) {
-    console.log(`➕ Đang nạp OrderItems...`);
+    console.log(`Đang nạp OrderItems...`);
     const orderItemsData = [];
     for (const order of existingOrders) {
       const numItems = getRandomInt(1, 3);
@@ -107,13 +107,13 @@ async function main() {
       }
     }
     await prisma.orderItem.createMany({ data: orderItemsData });
-    console.log(`✅ OrderItems sau khi nạp: ${await prisma.orderItem.count()}`);
+    console.log(`OrderItems sau khi nạp: ${await prisma.orderItem.count()}`);
   }
 
   
   const existingPointTxCount = await prisma.pointTransaction.count();
   if (existingPointTxCount < 100) {
-    console.log(`➕ Đang nạp PointTransactions...`);
+    console.log(`Đang nạp PointTransactions...`);
     const reasonsEarn = [
       "Thưởng tích điểm mua đơn hàng thành công",
       "Thưởng hoàn thành nhiệm vụ đăng ký tài khoản",
@@ -147,13 +147,13 @@ async function main() {
       });
     }
     await prisma.pointTransaction.createMany({ data: pointTxData });
-    console.log(`✅ PointTransactions sau khi nạp: ${await prisma.pointTransaction.count()}`);
+    console.log(`PointTransactions sau khi nạp: ${await prisma.pointTransaction.count()}`);
   }
 
   
   const existingVouchersCount = await prisma.userVoucher.count();
   if (existingVouchersCount < 100) {
-    console.log(`➕ Đang bổ sung UserVouchers...`);
+    console.log(`Đang bổ sung UserVouchers...`);
     const voucherData = [];
     const statuses = ["active", "used", "expired"];
     for (let i = 0; i < 20; i++) {
@@ -174,13 +174,13 @@ async function main() {
       });
     }
     await prisma.userVoucher.createMany({ data: voucherData });
-    console.log(`✅ UserVouchers sau khi nạp: ${await prisma.userVoucher.count()}`);
+    console.log(`UserVouchers sau khi nạp: ${await prisma.userVoucher.count()}`);
   }
 
   
   const existingDailyGamePlays = await prisma.dailyGamePlay.count();
   if (existingDailyGamePlays < 100) {
-    console.log(`➕ Đang nạp DailyGamePlays...`);
+    console.log(`Đang nạp DailyGamePlays...`);
     const games = ["Lucky Spin", "Sneaker Quiz", "Memory Match"];
     const gamePlayData = [];
     for (let i = 0; i < 110; i++) {
@@ -194,21 +194,21 @@ async function main() {
       });
     }
     await prisma.dailyGamePlay.createMany({ data: gamePlayData });
-    console.log(`✅ DailyGamePlays sau khi nạp: ${await prisma.dailyGamePlay.count()}`);
+    console.log(`DailyGamePlays sau khi nạp: ${await prisma.dailyGamePlay.count()}`);
   }
 
   
   const existingSocialPostsCount = await prisma.socialPost.count();
   if (existingSocialPostsCount < 100) {
-    console.log(`➕ Đang nạp SocialPosts, Comments & Reactions...`);
+    console.log(`Đang nạp SocialPosts, Comments & Reactions...`);
     const captions = [
-      "Vừa đập hộp em Nike Air Force 1 cực xịn tại ZestFoot! 🔥😎",
-      "Phối đồ streetwear cùng Converse Chuck 70 đen cổ cao classic ✨",
-      "Đôi Asics Gel-Kayano đi chạy bộ đúng đỉnh, quá êm chân 🏃‍♂️💨",
-      "Vans Old Skool phối cùng quần ống rộng bao ngầu nhé mảng outfit ngày hè 👟💯",
-      "Bộ sưu tập Sneaker cưng nhất phòng mình nè cả nhà ơi! ❤️",
-      "Giày Puma Suede form bao múp, đi lên chân tôn dáng hết nấc 🎯",
-      "Săn sale được mã giảm 50k mua đôi Adidas Superstar quá hời luôn 🎉"
+      "Vừa đập hộp em Nike Air Force 1 cực xịn tại ZestFoot! ",
+      "Phối đồ streetwear cùng Converse Chuck 70 đen cổ cao classic ",
+      "Đôi Asics Gel-Kayano đi chạy bộ đúng đỉnh, quá êm chân",
+      "Vans Old Skool phối cùng quần ống rộng bao ngầu nhé mảng outfit ngày hè ",
+      "Bộ sưu tập Sneaker cưng nhất phòng mình nè cả nhà ơi! ",
+      "Giày Puma Suede form bao múp, đi lên chân tôn dáng hết nấc ",
+      "Săn sale được mã giảm 50k mua đôi Adidas Superstar quá hời luôn "
     ];
     const images = [
       "https://images.unsplash.com/photo-1552346154-21d32810aba3?w=600",
@@ -233,18 +233,18 @@ async function main() {
       });
     }
     await prisma.socialPost.createMany({ data: postsData });
-    console.log(`✅ SocialPosts sau khi nạp: ${await prisma.socialPost.count()}`);
+    console.log(`SocialPosts sau khi nạp: ${await prisma.socialPost.count()}`);
 
     const createdPosts = await prisma.socialPost.findMany();
     const commentsData = [];
     const reactionsData = [];
     const commentTexts = [
       "Đôi này lên chân đẹp quá bạn ơi!",
-      "Shop bán hàng giao nhanh ghê, chúc mừng bạn nhé 🔥",
+      "Shop bán hàng giao nhanh ghê, chúc mừng bạn nhé ",
       "Phối với quần jeans hợp cực kỳ lun",
-      "Xin chỗ mua phụ kiện dây giày giống bạn với 👟",
+      "Xin chỗ mua phụ kiện dây giày giống bạn với ",
       "Đôi này đi đúng true size không bạn?",
-      "Nhìn ghiền quá, chắc cũng phải xúc 1 em thôi 😎",
+      "Nhìn ghiền quá, chắc cũng phải xúc 1 em thôi ",
       "ZestFoot đóng gói cẩn thận 10/10 điểm!"
     ];
     const rxTypes = ["like", "love", "fire"];
@@ -275,13 +275,13 @@ async function main() {
 
     await prisma.socialComment.createMany({ data: commentsData });
     await prisma.socialReaction.createMany({ data: reactionsData });
-    console.log(`✅ SocialComments: ${await prisma.socialComment.count()}, SocialReactions: ${await prisma.socialReaction.count()}`);
+    console.log(`SocialComments: ${await prisma.socialComment.count()}, SocialReactions: ${await prisma.socialReaction.count()}`);
   }
 
   
   const existingLeaderboardCount = await prisma.gameLeaderboard.count();
   if (existingLeaderboardCount < 100) {
-    console.log(`➕ Đang bổ sung GameLeaderboard...`);
+    console.log(`Đang bổ sung GameLeaderboard...`);
     const leaderboardData = [];
     const games = ["Lucky Spin", "Sneaker Runner", "Memory Match"];
     for (let i = 0; i < 55; i++) {
@@ -297,13 +297,13 @@ async function main() {
       });
     }
     await prisma.gameLeaderboard.createMany({ data: leaderboardData });
-    console.log(`✅ GameLeaderboard sau khi nạp: ${await prisma.gameLeaderboard.count()}`);
+    console.log(`GameLeaderboard sau khi nạp: ${await prisma.gameLeaderboard.count()}`);
   }
 
   
   const existingQrTicketsCount = await prisma.qrTicket.count();
   if (existingQrTicketsCount < 100) {
-    console.log(`➕ Đang nạp QrTickets...`);
+    console.log(`Đang nạp QrTickets...`);
     const ticketsData = [];
     for (let i = 0; i < 105; i++) {
       const id = `QR-ZEST-${getRandomInt(10000, 99999)}-${i}`;
@@ -323,13 +323,13 @@ async function main() {
       });
     }
     await prisma.qrTicket.createMany({ data: ticketsData });
-    console.log(`✅ QrTickets sau khi nạp: ${await prisma.qrTicket.count()}`);
+    console.log(`QrTickets sau khi nạp: ${await prisma.qrTicket.count()}`);
   }
 
   
   const existingSpinHistoryCount = await prisma.spinHistory.count();
   if (existingSpinHistoryCount < 100) {
-    console.log(`➕ Đang nạp SpinHistory...`);
+    console.log(`Đang nạp SpinHistory...`);
     const prizes = [
       { name: "Voucher 50.000₫", type: "voucher" },
       { name: "100 Điểm thưởng", type: "point" },
@@ -353,13 +353,13 @@ async function main() {
       });
     }
     await prisma.spinHistory.createMany({ data: spinData });
-    console.log(`✅ SpinHistory sau khi nạp: ${await prisma.spinHistory.count()}`);
+    console.log(`SpinHistory sau khi nạp: ${await prisma.spinHistory.count()}`);
   }
 
   
   const existingUserBadgesCount = await prisma.userBadge.count();
   if (existingUserBadgesCount < 100) {
-    console.log(`➕ Đang nạp UserBadges & BadgeClaims...`);
+    console.log(`Đang nạp UserBadges & BadgeClaims...`);
     const badgeTypes = ["SneakerHead", "VIP_Collector", "Reviewer_Pro", "Spin_Master", "Early_Bird"];
     const badgesData = [];
     const badgeClaimsData = [];
@@ -389,13 +389,13 @@ async function main() {
       console.log('UserBadges duplicate skip');
     }
     await prisma.userBadgeClaim.createMany({ data: badgeClaimsData });
-    console.log(`✅ UserBadges: ${await prisma.userBadge.count()}, UserBadgeClaims: ${await prisma.userBadgeClaim.count()}`);
+    console.log(`UserBadges: ${await prisma.userBadge.count()}, UserBadgeClaims: ${await prisma.userBadgeClaim.count()}`);
   }
 
   
   const existingNewsCount = await prisma.news.count();
   if (existingNewsCount < 100) {
-    console.log(`➕ Đang bổ sung News tin tức bài viết...`);
+    console.log(`Đang bổ sung News tin tức bài viết...`);
     const newsTemplates = [
       {
         title: "Top 10 Mẫu Sneaker Bán Chạy Nhất Mùa Hè 2026 Tại ZestFoot",
@@ -437,12 +437,12 @@ async function main() {
       });
     }
     await prisma.news.createMany({ data: newsData });
-    console.log(`✅ News sau khi nạp: ${await prisma.news.count()}`);
+    console.log(`News sau khi nạp: ${await prisma.news.count()}`);
   }
 
-  console.log('🎉 Hoàn tất quá trình seed dữ liệu thành công!');
+  console.log('Hoàn tất quá trình seed dữ liệu thành công!');
 }
 
 main()
-  .catch(e => console.error('❌ Lỗi seed dữ liệu:', e))
+  .catch(e => console.error('Lỗi seed dữ liệu:', e))
   .finally(async () => await prisma.$disconnect());
