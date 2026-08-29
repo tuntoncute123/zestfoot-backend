@@ -2,18 +2,14 @@ import { Logger } from '@nestjs/common';
 
 const logger = new Logger('RagHelper');
 
-/**
- * Format price in Vietnamese Dong format.
- */
+
 export function formatPrice(price: number | bigint | null): string {
   if (price === null || price === undefined) return 'Liên hệ';
   const num = Number(price);
   return new Intl.NumberFormat('vi-VN').format(num) + 'đ';
 }
 
-/**
- * Perform keyword-based search scoring for products.
- */
+
 export function retrieveRelevantProductsKeyword(message: string, products: any[]): any[] {
   if (!message || !products) return [];
   const normalizedMsg = message.toLowerCase().trim();
@@ -50,9 +46,7 @@ export function retrieveRelevantProductsKeyword(message: string, products: any[]
   return scoredProducts.filter((p) => p.score > 0).sort((a, b) => b.score - a.score);
 }
 
-/**
- * Combine vector search results and keyword search results using Reciprocal Rank Fusion.
- */
+
 export function reciprocalRankFusion(vectorResults: any[], keywordResults: any[], k = 60): any[] {
   const scores: Record<string, { doc: any; score: number }> = {};
   const applyRRF = (results: any[]) => {
@@ -74,9 +68,7 @@ export function reciprocalRankFusion(vectorResults: any[], keywordResults: any[]
     .map((item) => item.doc);
 }
 
-/**
- * Enriches retrieved products with GraphRAG related items (same brand/category).
- */
+
 export function enrichWithGraphRelations(fusedProducts: any[], allProducts: any[]): any[] {
   if (!fusedProducts || fusedProducts.length === 0) return [];
   const enriched = [...fusedProducts];
@@ -106,9 +98,7 @@ export function enrichWithGraphRelations(fusedProducts: any[], allProducts: any[
   return enriched;
 }
 
-/**
- * Evaluates retrieval accuracy (Correct, Ambiguous, Incorrect).
- */
+
 export function evaluateRetrieval(message: string, retrievedProducts: any[]): 'CORRECT' | 'AMBIGUOUS' | 'INCORRECT' {
   if (!retrievedProducts || retrievedProducts.length === 0) return 'INCORRECT';
   const normalized = message.toLowerCase();
@@ -122,9 +112,7 @@ export function evaluateRetrieval(message: string, retrievedProducts: any[]): 'C
   return 'CORRECT';
 }
 
-/**
- * Rewrites user search query for better DB search matching.
- */
+
 export async function rewriteQuery(openai: any, chatModel: string, message: string): Promise<string> {
   try {
     const response = await openai.chat.completions.create({
@@ -146,9 +134,7 @@ export async function rewriteQuery(openai: any, chatModel: string, message: stri
   }
 }
 
-/**
- * Builds fallback chat response with quick suggestions when AI is offline/busy.
- */
+
 export function buildFallbackReply(products: any[]): string {
   if (!products || products.length === 0) {
     return 'Xin lỗi, AI đang tạm thời quá tải và shop chưa tìm thấy sản phẩm phù hợp. Bạn thử mô tả rõ hơn về hãng, mức giá, loại giày hoặc giới tính để mình gợi ý sát hơn.';

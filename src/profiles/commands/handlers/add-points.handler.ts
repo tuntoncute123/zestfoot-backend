@@ -14,7 +14,7 @@ export class AddPointsHandler implements ICommandHandler<AddPointsCommand> {
   async execute(command: AddPointsCommand) {
     const { userId, amount, reason, type } = command;
 
-    // 1. Fetch user profile
+    
     const profile = await this.prisma.profile.findUnique({
       where: { id: userId },
     });
@@ -23,7 +23,7 @@ export class AddPointsHandler implements ICommandHandler<AddPointsCommand> {
       throw new NotFoundException(`Profile not found for user ID: ${userId}`);
     }
 
-    // Calculate new points
+    
     let newPoints = profile.points || 0;
     if (type === 'earn') {
       newPoints += amount;
@@ -31,7 +31,7 @@ export class AddPointsHandler implements ICommandHandler<AddPointsCommand> {
       newPoints = Math.max(0, newPoints - amount);
     }
 
-    // 2. PostgreSQL Update
+    
     const updatedProfile = await this.prisma.profile.update({
       where: { id: userId },
       data: {
@@ -39,7 +39,7 @@ export class AddPointsHandler implements ICommandHandler<AddPointsCommand> {
       },
     });
 
-    // 3. QuestDB Ingestion (Time-series)
+    
     const reasonEscaped = reason.replace(/["\\]/g, '\\$&');
     const pointsLine = `point_transactions,user_id=${userId},type=${type} amount=${amount}i,reason="${reasonEscaped}"`;
     await this.questDb.ingestLine(pointsLine);

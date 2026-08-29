@@ -48,20 +48,16 @@ export class QuestDbService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /**
-   * Ingests a record using InfluxDB Line Protocol (ILP).
-   * Format: tableName,tag1=val1,tag2=val2 field1=val1,field2=val2 timestamp
-   * QuestDB will auto-create the table if it does not exist.
-   */
+  
   async ingestLine(line: string): Promise<boolean> {
     try {
       if (this.clientSocket && !this.clientSocket.destroyed) {
         this.clientSocket.write(`${line}\n`);
         return true;
       } else {
-        // Retry connection or fallback to HTTP ILP
+        
         this.connectIlp();
-        // Fallback: send via REST API (QuestDB supports posting ILP data directly)
+        
         const response = await fetch(`${this.questDbRestUrl}/write`, {
           method: 'POST',
           body: `${line}\n`,
@@ -77,20 +73,17 @@ export class QuestDbService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /**
-   * Executes a SQL query against QuestDB's REST API and returns rows.
-   * @param sql SQL query string.
-   */
+  
   async querySql<T = any>(sql: string): Promise<T[]> {
     try {
       const url = `${this.questDbRestUrl}/exec?query=${encodeURIComponent(sql)}`;
       const response = await fetch(url);
       if (!response.ok) {
-        return []; // Return empty dataset silently if QuestDB table is not initialized yet
+        return []; 
       }
       const data = await response.json();
       
-      // QuestDB REST returns data in format: { columns: [...], dataset: [[val1, val2], ...] }
+      
       if (!data.dataset || !data.columns) {
         return [];
       }
@@ -104,7 +97,7 @@ export class QuestDbService implements OnModuleInit, OnModuleDestroy {
         return obj as T;
       });
     } catch {
-      return []; // Return empty dataset on error
+      return []; 
     }
   }
 }

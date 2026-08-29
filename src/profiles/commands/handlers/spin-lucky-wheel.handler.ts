@@ -16,7 +16,7 @@ export class SpinLuckyWheelHandler implements ICommandHandler<SpinLuckyWheelComm
   async execute(command: SpinLuckyWheelCommand) {
     const { userId, userName } = command;
 
-    // 1. Fetch user profile
+    
     const profile = await this.prisma.profile.findUnique({
       where: { id: userId },
     });
@@ -29,13 +29,13 @@ export class SpinLuckyWheelHandler implements ICommandHandler<SpinLuckyWheelComm
       throw new BadRequestException('Bạn đã hết lượt quay!');
     }
 
-    // 2. Fetch prizes from Postgres
+    
     const prizes = await this.prisma.campaignPrize.findMany();
     if (prizes.length === 0) {
       throw new BadRequestException('Không tìm thấy cấu hình giải thưởng!');
     }
 
-    // Draw prize based on drop_rate
+    
     let totalRate = prizes.reduce((sum, p) => sum + Number(p.drop_rate), 0);
     let rand = Math.random() * totalRate;
     let selectedPrize = prizes[0];
@@ -49,10 +49,10 @@ export class SpinLuckyWheelHandler implements ICommandHandler<SpinLuckyWheelComm
       }
     }
 
-    // 3. PostgreSQL Update: deduct ticket
+    
     let updatedPoints = profile.points || 0;
     
-    // Check if points are won
+    
     let pointsWon = 0;
     if (selectedPrize.prize_type === 'points') {
       const match = selectedPrize.prize_name.match(/\d+/);
@@ -69,7 +69,7 @@ export class SpinLuckyWheelHandler implements ICommandHandler<SpinLuckyWheelComm
       },
     });
 
-    // If won a voucher/coupon, generate a user voucher
+    
     if (selectedPrize.prize_type === 'voucher') {
       const voucherCode = `SPIN-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       await this.prisma.userVoucher.create({
@@ -83,22 +83,22 @@ export class SpinLuckyWheelHandler implements ICommandHandler<SpinLuckyWheelComm
       });
     }
 
-    // 4. Ingest Event into QuestDB (Time-Series)
-    // Escaping strings for ILP: space/quotes
+    
+    
     const userEscaped = userName.replace(/["\\]/g, '\\$&');
     const prizeEscaped = selectedPrize.prize_name.replace(/["\\]/g, '\\$&');
     
-    // Ingest spin history log
+    
     const spinHistoryLine = `spin_history,user_id=${userId},prize_type=${selectedPrize.prize_type} user_name="${userEscaped}",prize_name="${prizeEscaped}"`;
     await this.questDb.ingestLine(spinHistoryLine);
 
-    // Ingest point transaction if points won
+    
     if (pointsWon > 0) {
       const pointsLine = `point_transactions,user_id=${userId},type=earn amount=${pointsWon}i,reason="Lucky Wheel Spin"`;
       await this.questDb.ingestLine(pointsLine);
     }
 
-    // Broadcast winner via WebSockets
+    
     this.appGateway.broadcastSpinWinner({ userName, prizeName: selectedPrize.prize_name });
 
     return {

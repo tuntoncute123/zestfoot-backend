@@ -4,8 +4,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
-// Fix: JSON.stringify không serialize được BigInt (xuất hiện khi Prisma/QuestDB trả về BigInt fields)
-// Patch này convert BigInt thành string khi serializing, tránh lỗi "Do not know how to serialize a BigInt"
+
+
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
@@ -17,23 +17,23 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 3001;
 
-  // Enable CORS for frontend integration
+  
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
 
-  // Enable global validation pipe
+  
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
   }));
 
-  // Global route prefix: /zestfoot/{resource}/...
+  
   app.setGlobalPrefix('zestfoot');
 
-  // Configure Swagger documentation
+  
   const config = new DocumentBuilder()
     .setTitle('ZestFoot API')
     .setDescription('ZestFoot NextJS + NestJS Backend API Documentation')

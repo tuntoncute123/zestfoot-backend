@@ -7,9 +7,7 @@ export interface CouponValidationResult {
   voucher?: any;
 }
 
-/**
- * Validates a public coupon entity against the order details.
- */
+
 export function validatePublicCoupon(coupon: any, orderTotal: number): CouponValidationResult {
   if (!coupon.is_active) {
     return { valid: false, message: 'Mã giảm giá không hoạt động.' };
@@ -61,9 +59,7 @@ export function validatePublicCoupon(coupon: any, orderTotal: number): CouponVal
   };
 }
 
-/**
- * Validates a private user voucher entity against the order details.
- */
+
 export function validatePrivateVoucher(voucher: any, orderTotal: number): CouponValidationResult {
   if (voucher.expires_at && new Date(voucher.expires_at) < new Date()) {
     return { valid: false, message: 'Voucher đã hết hạn.' };

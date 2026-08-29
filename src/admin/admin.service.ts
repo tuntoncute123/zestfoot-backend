@@ -13,7 +13,7 @@ import { DeleteFromTableDto } from "./dto/delete-from-table.dto";
 import { serializeData } from "../common/utils/db-serialization";
 import { ConfigService } from "@nestjs/config";
 import { AppGateway } from "../websocket/app.gateway";
-// Helpers
+
 import { computeMiningData } from "./helpers/mining.helper";
 import {
   computeLocalDemandForecasting,
@@ -39,7 +39,7 @@ import {
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
   private cache = new Map<string, { data: any; expiry: number }>();
-  private readonly CACHE_TTL = 3600 * 1000; // 1 hour in ms
+  private readonly CACHE_TTL = 3600 * 1000; 
 
   constructor(
     private readonly prisma: PrismaService,
@@ -88,7 +88,7 @@ export class AdminService {
     return (this.prisma as any)[modelName];
   }
 
-  // --- Original DB operations ---
+  
   async queryTable(body: QueryTableDto) {
     try {
       if (!body?.table) {
@@ -98,7 +98,7 @@ export class AdminService {
       }
       const tableNameLower = body.table.toLowerCase();
 
-      // 1. Intercept Virtual DWH tables
+      
       if (tableNameLower === "fact_sales") {
         const orders = await this.prisma.order.findMany();
         const sales = [];
@@ -175,7 +175,7 @@ export class AdminService {
         };
       }
 
-      // 2. Direct DB Access via Mapping
+      
       const model = this.getModel(body.table);
       const findOptions: any = {};
 
@@ -382,7 +382,7 @@ export class AdminService {
       const where: any = {};
 
       if (body.id !== undefined && body.id !== null) {
-        // Delete by primary key id
+        
         const isNumericId = /^\d+$/.test(String(body.id));
         if (isNumericId) {
           where.id = BigInt(String(body.id));
@@ -390,7 +390,7 @@ export class AdminService {
           where.id = body.id;
         }
       } else if (body.filters && Object.keys(body.filters).length > 0) {
-        // Delete by arbitrary filters (e.g. { post_id: 5 } or { user_id: 'uuid' })
+        
         for (const [key, value] of Object.entries(body.filters)) {
           if (value !== undefined && value !== null) {
             const isNumericVal = /^\d+$/.test(String(value));
@@ -421,7 +421,7 @@ export class AdminService {
     }
   }
 
-  // --- 1. Association Rule & Data Mining ---
+  
   async getMiningData() {
     const cacheKey = "mining_data";
     const cached = this.getCachedData(cacheKey);
@@ -451,7 +451,7 @@ export class AdminService {
     }
   }
 
-  // --- 2. Copilot planning & LLM Query ---
+  
   async copilot(messages: any[], sessionMetadata?: any) {
     const pythonUrl =
       this.configService.get<string>("PYTHON_SERVICE_URL") ||
@@ -521,7 +521,7 @@ export class AdminService {
     }
   }
 
-  // --- 3. AI Service Health ---
+  
   async getAiHealth() {
     const pythonUrl =
       this.configService.get<string>("app.pythonServiceUrl") ||
@@ -540,7 +540,7 @@ export class AdminService {
     }
   }
 
-  // --- 4. Machine Learning Forecast & Personalization ---
+  
   async getMlAnalytics(email?: string, limit = 5) {
     const pythonUrl =
       this.configService.get<string>("app.pythonServiceUrl") ||
@@ -618,7 +618,7 @@ export class AdminService {
     );
   }
 
-  // --- 5. Custom Business Dashboard Data (DWH Analytics) ---
+  
   async getAnalytics(brandFilter = "all") {
     const cacheKey = `analytics_data_${brandFilter.toLowerCase()}`;
     const cached = this.getCachedData(cacheKey);
@@ -666,9 +666,9 @@ export class AdminService {
     }
   }
 
-  // --- 6. AI Auto Marketing Generation ---
+  
   async autoContent() {
-    // Start background processing immediately
+    
     this.logger.log(
       "Starting AI Auto Marketing Content generation in background...",
     );
@@ -844,7 +844,7 @@ export class AdminService {
     }
   }
 
-  // --- 8. Smart Pricing & Margin AI Report ---
+  
   async getSmartPricing() {
     try {
       const [products, orders, reviews] = await Promise.all([
@@ -853,7 +853,7 @@ export class AdminService {
         this.prisma.review.findMany({ take: 1000 }),
       ]);
 
-      // Calculate sold units per product ID from orders JSON or items
+      
       const unitsSoldMap = new Map<string, number>();
       for (const order of orders) {
         const items = Array.isArray(order.items) ? (order.items as any[]) : [];
@@ -865,7 +865,7 @@ export class AdminService {
         }
       }
 
-      // Calculate average rating per product ID
+      
       const ratingMap = new Map<string, { sum: number; count: number }>();
       for (const review of reviews) {
         if (review.product_id) {
@@ -885,11 +885,11 @@ export class AdminService {
         const idStr = p.id.toString();
         const price = Number(p.price || 1500000);
         const salePrice = p.salePrice ? Number(p.salePrice) : price;
-        // If costPrice is not set, default to 65% of price
+        
         const costPrice = p.costPrice ? Number(p.costPrice) : Math.round(price * 0.65);
         const minMarginPercent = 15;
 
-        // Realistic units sold based on actual orders or dynamic distribution
+        
         let unitsSold = unitsSoldMap.get(idStr) || 0;
         if (unitsSold === 0) {
           unitsSold = (p.isTrending ? 8 : (p.isSale ? 5 : 2)) + (Number(p.id) % 4);
@@ -932,7 +932,7 @@ export class AdminService {
         };
       });
 
-      // Sort by gross revenue descending
+      
       marginReportList.sort((a, b) => b.grossRev - a.grossRev);
 
       let clogProducts = marginReportList.filter((p) => p.isClog);

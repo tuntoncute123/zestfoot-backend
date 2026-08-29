@@ -31,7 +31,7 @@ export class AiService {
     this.logger.log(`AiService initialized with local Ollama at ${ollamaUrl}/v1 (model: qwen2.5:3b)`);
   }
 
-  // --- 1. AI Chat ---
+  
   async chat(message: string, sessionMetadata?: any[], userImageBase64?: string, shoeImageBase64?: string) {
     const pythonUrl = this.configService.get<string>('app.pythonServiceUrl');
     try {
@@ -77,9 +77,9 @@ export class AiService {
     }
   }
 
-  // --- 3. Agentic RAG logic ---
+  
   async chatRag(message: string, userContext?: any) {
-    // 1. Load products cache if not loaded
+    
     if (!this.cachedProducts) {
       const dbProducts = await this.prisma.product.findMany();
       this.cachedProducts = dbProducts.map((p) => ({
@@ -90,7 +90,7 @@ export class AiService {
       }));
     }
 
-    // 2. Classify intent / select tools
+    
     const normalized = message.toLowerCase();
     const tools: string[] = [];
     let searchQuery = message;
@@ -149,7 +149,7 @@ export class AiService {
 - Đổi trả: Hỗ trợ đổi size/mẫu trong vòng 7 ngày kể từ khi nhận hàng. Yêu cầu sản phẩm chưa qua sử dụng, còn nguyên tem mác và hộp giày.
 - Size giày: Có bảng quy đổi US/UK/CM đính kèm bên cạnh mỗi sản phẩm.`;
 
-    // 3. Execute tools
+    
     for (const tool of tools) {
       if (tool === 'customer_orders_check' && userContext?.email) {
         const allOrders = await this.prisma.order.findMany({
@@ -206,13 +206,13 @@ export class AiService {
       } else if (tool === 'store_policies_search') {
         contextText += `\n\n[CONTEXT: Chính sách cửa hàng]:\n${STORE_KNOWLEDGE_BASE}`;
       } else if (tool === 'product_catalog_search') {
-        // Run Hybrid Search
+        
         let vectorRes: any[] = [];
 
         const keywordRes = retrieveRelevantProductsKeyword(searchQuery, this.cachedProducts || []);
         let fused = reciprocalRankFusion(vectorRes, keywordRes);
 
-        // CRAG Evaluation
+        
         let grade = evaluateRetrieval(searchQuery, fused);
         if (grade === 'AMBIGUOUS' && this.openai) {
           const chatModel = this.configService.get<string>('app.ollamaModel') || 'qwen2.5:3b';
@@ -224,7 +224,7 @@ export class AiService {
           fused = [];
         }
 
-        // GraphRAG relation traversal
+        
         matchedProducts = enrichWithGraphRelations(fused.slice(0, 4), this.cachedProducts || []);
 
         if (matchedProducts.length > 0) {
@@ -251,7 +251,7 @@ export class AiService {
       return { reply: buildFallbackReply(matchedProducts) };
     }
 
-    // 4. Generate LLM Reply
+    
     try {
       const SYSTEM_PROMPT = `Bạn là trợ lý ảo AI thông minh của cửa hàng giày ZestFoot (HKT-Shoes).
 Hệ thống của bạn hoạt động theo mô hình Agentic RAG nâng cao (kết hợp Hybrid Search + GraphRAG + CRAG).
@@ -283,7 +283,7 @@ Nhiệm vụ của bạn:
       return { reply };
     } catch (error) {
       this.logger.error('Error in Ollama RAG completion:', error);
-      // Fallback
+      
       return { reply: buildFallbackReply(matchedProducts) };
     }
   }
@@ -292,7 +292,7 @@ Nhiệm vụ của bạn:
     return null;
   }
 
-  // --- 4. Smart Voice Parser ---
+  
   async parseVoice(text: string) {
     if (!this.openai) {
       return {
@@ -308,7 +308,7 @@ Nhiệm vụ của bạn:
     return parseVoiceText(this.openai, chatModel, text);
   }
 
-  // --- 5. Generate Vector Embeddings for products ---
+  
   async generateEmbeddings() {
     return {
       message: 'Vector embedding hiện tại không khả dụng trên môi trường Ollama Local offline.',

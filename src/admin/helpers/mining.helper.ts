@@ -2,7 +2,7 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
   const completedOrders = orders.filter((o) => o.status === 'delivered');
   const totalOrdersCount = completedOrders.length;
 
-  // 1.1 Apriori Market Basket Analysis
+  
   const productCounts: Record<number, number> = {};
   const pairCounts: Record<string, number> = {};
   const productDetailsMap: Record<number, any> = {};
@@ -70,7 +70,7 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
   }
   marketBasketRules.sort((a, b) => b.lift - a.lift || b.countBoth - a.countBoth);
 
-  // 1.2 RFM Customer Segmentation
+  
   const customerRFM: Record<string, any> = {};
   completedOrders.forEach((o) => {
     const customerObj = typeof o.customer === 'string' ? JSON.parse(o.customer) : o.customer;
@@ -189,7 +189,7 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
     };
   });
 
-  // 1.3 Review Text Mining
+  
   const matchPatterns = {
     size: /chật|rộng|ôm sát|kích|size|hơi khít|không vừa|to quá|bé quá|kích chân/i,
     comfort: /đau|cứng|mỏi|rát|phồng|bí|nóng|nhức|thốn|rát chân|bí bách|khó chịu/i,

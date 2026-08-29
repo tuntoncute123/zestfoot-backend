@@ -37,7 +37,7 @@ export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand> {
       },
     });
 
-    // Notify user via WebSocket
+    
     this.appGateway.broadcastOrderStatus(order.id.toString(), 'cancelled');
 
     return {

@@ -19,7 +19,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
       retryStrategy: (times) => {
-        if (times > 3) return null; // Stop retrying after 3 attempts if Redis is down
+        if (times > 3) return null; 
         return Math.min(times * 200, 1000);
       },
       lazyConnect: true,
@@ -44,7 +44,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // --- KEY VALUE CACHING ---
+  
   async get<T>(key: string): Promise<T | null> {
     if (!this.redisClient || this.redisClient.status !== 'ready') return null;
     try {
@@ -71,7 +71,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     } catch {}
   }
 
-  // --- SORTED SETS FOR LEADERBOARDS ---
+  
   async addLeaderboardScore(gameName: string, userId: string, score: number): Promise<void> {
     if (!this.redisClient || this.redisClient.status !== 'ready') return;
     try {

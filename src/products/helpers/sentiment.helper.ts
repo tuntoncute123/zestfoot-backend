@@ -23,9 +23,7 @@ export interface SentimentSummaryResult {
 const OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:3b';
 
-/**
- * Analyzes the sentiment of a single review using local Ollama.
- */
+
 export async function analyzeReviewSentiment(
   body: ReviewSentimentInput,
   ollamaUrl: string = OLLAMA_URL,
@@ -78,9 +76,7 @@ Chú ý: chỉ trả về mã JSON, không thêm bất kỳ văn bản nào bên
   return null;
 }
 
-/**
- * Generates an overall sentiment summary from a list of reviews using local Ollama.
- */
+
 export async function generateSentimentSummary(
   reviews: any[],
   defaultSummary: SentimentSummaryResult,

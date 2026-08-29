@@ -58,7 +58,7 @@ export function computeLocalDemandForecasting(orders: any[], products: any[]) {
 
     const currentAvg = sumY / Y.length;
 
-    // Linear Regression parameters
+    
     let slope = 0;
     let intercept = currentAvg;
 

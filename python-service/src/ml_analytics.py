@@ -31,11 +31,10 @@ def safe_float(val) -> float:
         return 0.0
     return 0.0
 
-# Helper to fetch from local NestJS REST API
 def get_local_data(table: str, limit: int = 1000, order_by: str = None):
     api_url = os.getenv("NEXT_PUBLIC_API_URL", "http://localhost:3001")
     url = f"{api_url}/zestfoot/admin/query"
-    
+
     orderBy = None
     if order_by:
         parts = order_by.split('.')
@@ -63,7 +62,6 @@ def get_local_data(table: str, limit: int = 1000, order_by: str = None):
     except Exception as e:
         raise RuntimeError(f"Connection failed to NestJS at {url}: {e}")
 
-# 1. Collaborative Filtering Shoe Recommendations
 def get_recommendations(user_email: str, limit=5):
     try:
         orders_data = get_local_data("orders", limit=1000, order_by="created_at.desc")
@@ -73,12 +71,10 @@ def get_recommendations(user_email: str, limit=5):
         print(f"[ML Recommendation] Local DB fetch error: {e}")
         return []
 
-    # Map products for easy lookup
     product_map = {p['id']: p for p in products_data}
-    
-    # Process interactions: combining orders (score 5) and reviews (score of rating)
+
     interactions = []
-    
+
     for o in orders_data:
         if o.get('status') == 'cancelled':
             continue
@@ -95,7 +91,7 @@ def get_recommendations(user_email: str, limit=5):
             pid = item.get('product_id')
             if pid:
                 interactions.append({'email': email, 'product_id': int(pid), 'score': 5})
-                
+
     for r in reviews_data:
         email = r.get('email')
         pid = r.get('product_id')
@@ -103,17 +99,14 @@ def get_recommendations(user_email: str, limit=5):
         if email and pid and rating:
             interactions.append({'email': email, 'product_id': int(pid), 'score': int(rating)})
 
-    # Fallback to general popular products if no interaction data
     if not interactions:
         return products_data[:limit]
 
     df = pd.DataFrame(interactions)
     df = df.groupby(['email', 'product_id'])['score'].max().reset_index()
 
-    # User-item matrix pivot
     pivot = df.pivot_table(index='email', columns='product_id', values='score', fill_value=0)
 
-    # Cold Start: If user is new or not in the pivot table, return top-selling items
     if user_email not in pivot.index:
         top_pids = df.groupby('product_id')['score'].sum().sort_values(ascending=False).index.tolist()
         rec_products = [product_map[pid] for pid in top_pids if pid in product_map][:limit]
@@ -122,7 +115,6 @@ def get_recommendations(user_email: str, limit=5):
             rec_products.extend(remaining[:limit - len(rec_products)])
         return rec_products
 
-    # Collaborative Filtering: Compute Item-Item Similarity Matrix using Cosine Similarity
     try:
         from sklearn.metrics.pairwise import cosine_similarity
         prod_similarity = cosine_similarity(pivot.T)
@@ -132,7 +124,6 @@ def get_recommendations(user_email: str, limit=5):
         top_pids = df.groupby('product_id')['score'].sum().sort_values(ascending=False).index.tolist()
         return [product_map[pid] for pid in top_pids if pid in product_map][:limit]
 
-    # User vector
     user_vector = pivot.loc[user_email]
     unrated_products = user_vector[user_vector == 0].index
     rated_products = user_vector[user_vector > 0].index
@@ -141,7 +132,6 @@ def get_recommendations(user_email: str, limit=5):
         top_pids = df.groupby('product_id')['score'].sum().sort_values(ascending=False).index.tolist()
         return [product_map[pid] for pid in top_pids if pid in product_map][:limit]
 
-    # Predict scores
     predicted_scores = {}
     for pid in unrated_products:
         sim_scores = df_sim[pid]
@@ -149,14 +139,11 @@ def get_recommendations(user_email: str, limit=5):
         denominator = sum(abs(sim_scores[r_pid]) for r_pid in rated_products)
         predicted_scores[pid] = numerator / (denominator + 1e-9)
 
-    # Sort predicted scores
     sorted_pids = sorted(predicted_scores.items(), key=lambda x: x[1], reverse=True)
     recommended_pids = [pid for pid, score in sorted_pids][:limit]
 
-    # Resolve recommendations
     rec_products = [product_map[pid] for pid in recommended_pids if pid in product_map]
-    
-    # Pad with popular products if recommendations are fewer than limit
+
     if len(rec_products) < limit:
         top_pids = df.groupby('product_id')['score'].sum().sort_values(ascending=False).index.tolist()
         for pid in top_pids:
@@ -164,11 +151,10 @@ def get_recommendations(user_email: str, limit=5):
                 break
             if pid in product_map and product_map[pid] not in rec_products:
                 rec_products.append(product_map[pid])
-                
+
     return rec_products
 
 
-# 2. Demand Forecasting using Linear Regression with Seasonal Multipliers
 def get_demand_forecasting():
     try:
         orders_data = get_local_data("orders", limit=1000, order_by="created_at.desc")
@@ -178,8 +164,7 @@ def get_demand_forecasting():
         return []
 
     product_brand_map = {p['id']: p.get('brand') or 'Other' for p in products_data}
-    
-    # Aggregate sales history: { (brand, year_month): quantity }
+
     history = {}
     all_months = set()
     all_brands = set(product_brand_map.values())
@@ -190,7 +175,7 @@ def get_demand_forecasting():
         created_at = o.get('created_at')
         if not created_at or len(created_at) < 7:
             continue
-        date_str = created_at[:7]  # 'YYYY-MM'
+        date_str = created_at[:7]
         all_months.add(date_str)
         items = o.get('items', [])
         for item in items:
@@ -206,8 +191,6 @@ def get_demand_forecasting():
     sorted_months = sorted(list(all_months))
     month_indices = {m: i for i, m in enumerate(sorted_months)}
 
-    # Seasonality weights by calendar month index (1 to 12)
-    # September back-to-school: 1.25, November Black Friday: 1.45, Jan/Feb Tet Holiday: 1.3
     seasonal_factors = {
         1: 1.25, 2: 1.15, 3: 0.95, 4: 0.95, 5: 1.0, 6: 1.05,
         7: 1.1, 8: 1.05, 9: 1.3, 10: 1.15, 11: 1.5, 12: 1.4
@@ -220,7 +203,6 @@ def get_demand_forecasting():
         from sklearn.linear_model import LinearRegression
     except Exception as e:
         print(f"[ML Forecasting] sklearn import error, using moving average fallback: {e}")
-        # Simple moving average fallback
         for brand in all_brands:
             brand_sales = [history.get((brand, m), 0) for m in sorted_months]
             avg_sales = sum(brand_sales) / len(brand_sales) if brand_sales else 0
@@ -239,7 +221,7 @@ def get_demand_forecasting():
         for m in sorted_months:
             X.append([month_indices[m]])
             y.append(history.get((brand, m), 0))
-        
+
         if not y or sum(y) == 0:
             forecasts.append({
                 'brand': brand,
@@ -258,8 +240,7 @@ def get_demand_forecasting():
             pred_idx = last_idx + offset
             pred_raw = model.predict([[pred_idx]])[0]
             pred_raw = max(0.0, pred_raw)
-            
-            # Month number (1-12)
+
             f_month = (now.month + offset - 1) % 12 + 1
             factor = seasonal_factors.get(f_month, 1.0)
             return int(round(pred_raw * factor))
@@ -276,7 +257,6 @@ def get_demand_forecasting():
     return forecasts
 
 
-# 3. Targeted Vouchers & Churn Prediction
 def get_customer_ml_scores():
     try:
         orders_data = get_local_data("orders", limit=1000, order_by="created_at.desc")
@@ -291,7 +271,7 @@ def get_customer_ml_scores():
     for o in orders_data:
         if o.get('status') == 'cancelled':
             continue
-            
+
         customer = o.get('customer')
         email = None
         name = 'Khách vãng lai'
@@ -300,7 +280,7 @@ def get_customer_ml_scores():
             name = customer.get('fullName') or 'Khách vãng lai'
         elif isinstance(customer, str):
             name = customer
-            
+
         if not email:
             email = o.get('email') or o.get('customer_email')
         if not email:
@@ -313,7 +293,6 @@ def get_customer_ml_scores():
             o_date = now
 
         spent = safe_float(o.get('total_amount'))
-        # Sum discounts used
         discount = safe_float(o.get('discount')) + safe_float(o.get('voucher_discount')) + safe_float(o.get('point_discount'))
 
         if email not in users:
@@ -338,14 +317,10 @@ def get_customer_ml_scores():
         frequency = len(u['order_dates'])
         monetary = u['total_spent']
 
-        # Churn classification model: Sigmoid function mapping Recency vs Frequency
-        # As Recency increases, risk of churn increases. High frequency dampens the risk slightly.
         x_churn = (recency_days - 60) / 20.0 - (frequency * 0.15)
         churn_prob = 1.0 / (1.0 + np.exp(-x_churn))
         churn_pct = int(round(churn_prob * 100))
 
-        # Discount sensitivity / Voucher propensity:
-        # High ratio of discount to total spent increases propensity. High frequency increases baseline.
         discount_ratio = u['total_discount'] / (monetary + u['total_discount'] + 1e-9)
         x_prop = (discount_ratio - 0.12) * 8.0 + (frequency * 0.1)
         prop_prob = 1.0 / (1.0 + np.exp(-x_prop))

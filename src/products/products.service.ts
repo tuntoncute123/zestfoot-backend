@@ -24,7 +24,7 @@ export class ProductsService {
     private readonly redisService: RedisService,
   ) {}
 
-  // --- PRODUCTS ---
+  
   async getAllProducts(params?: {
     limit?: number;
     offset?: number;
@@ -92,7 +92,7 @@ export class ProductsService {
         ...b,
         id: b.id.toString(),
       }));
-      await this.redisService.set(cacheKey, formatted, 120); // 120s TTL
+      await this.redisService.set(cacheKey, formatted, 120); 
       return formatted;
     } catch (error) {
       this.logger.error(`Lỗi khi lấy danh sách thương hiệu: ${error.message}`, error.stack);
@@ -100,7 +100,7 @@ export class ProductsService {
     }
   }
 
-  // --- NEWS ---
+  
   async getAllNews() {
     try {
       const news = await this.prisma.news.findMany();
@@ -134,7 +134,7 @@ export class ProductsService {
     }
   }
 
-  // --- REVIEWS ---
+  
   async getReviews(productId?: string, sentiment?: string) {
     try {
       const where: any = {};
@@ -184,7 +184,7 @@ export class ProductsService {
     sentiment_explanation?: string;
   }) {
     try {
-      // Default values / Fallback for Sentiment Analysis
+      
       let sentiment = body.sentiment || 'neutral';
       let sentimentScore = body.sentiment_score ?? 50;
       let sentimentExplanation = body.sentiment_explanation || 'Không thể phân tích bằng AI, tự động xếp loại dựa trên số sao đánh giá.';
@@ -323,7 +323,7 @@ export class ProductsService {
     }
   }
 
-  // --- COUPONS ---
+  
   async validateCoupon(code: string, orderTotal: number, userId?: string) {
     try {
       if (!code) {
@@ -332,7 +332,7 @@ export class ProductsService {
 
       const upperCode = code.toUpperCase().trim();
 
-      // 1. Check Public Coupon
+      
       const coupon = await this.prisma.coupon.findUnique({
         where: { code: upperCode },
       });
@@ -344,7 +344,7 @@ export class ProductsService {
         }
       }
 
-      // 2. Check User Vouchers (Private)
+      
       if (userId) {
         const voucher = await this.prisma.userVoucher.findFirst({
           where: {
@@ -498,7 +498,7 @@ export class ProductsService {
       const mainProduct = await this.prisma.product.findUnique({ where: { id: pId } });
       if (!mainProduct) return [];
 
-      // Tìm sản phẩm mua kèm (ưu tiên phụ kiện hoặc khác danh mục)
+      
       const accessories = await this.prisma.product.findMany({
         where: {
           id: { not: pId },

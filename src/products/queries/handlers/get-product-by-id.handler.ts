@@ -32,7 +32,7 @@ export class GetProductByIdHandler implements IQueryHandler<GetProductByIdQuery>
           });
         }
       } else {
-        // Find by slug. Slugify helper
+        
         const searchSlug = trimmed
           .toLowerCase()
           .normalize('NFD')
@@ -44,7 +44,7 @@ export class GetProductByIdHandler implements IQueryHandler<GetProductByIdQuery>
 
         const searchTokens = searchSlug.split('-').filter(Boolean);
 
-        // Fetch products to find the best match
+        
         const allProducts = await this.prisma.product.findMany();
 
         const getProductSlugs = (p: any) => {
@@ -72,13 +72,13 @@ export class GetProductByIdHandler implements IQueryHandler<GetProductByIdQuery>
           return { nameSlug, brandSlug, fullSlug };
         };
 
-        // 1. Exact match by nameSlug or fullSlug
+        
         product = allProducts.find((p) => {
           const { nameSlug, fullSlug } = getProductSlugs(p);
           return nameSlug === searchSlug || fullSlug === searchSlug;
         });
 
-        // 2. Partial match
+        
         if (!product) {
           product = allProducts.find((p) => {
             const { nameSlug, fullSlug } = getProductSlugs(p);
@@ -91,7 +91,7 @@ export class GetProductByIdHandler implements IQueryHandler<GetProductByIdQuery>
           });
         }
 
-        // 3. Token match (all searchTokens match in fullSlug)
+        
         if (!product && searchTokens.length > 0) {
           product = allProducts.find((p) => {
             const { fullSlug } = getProductSlugs(p);
@@ -99,7 +99,7 @@ export class GetProductByIdHandler implements IQueryHandler<GetProductByIdQuery>
           });
         }
 
-        // 4. Any token match (tokens with length > 2)
+        
         if (!product && searchTokens.length > 0) {
           product = allProducts.find((p) => {
             const { fullSlug } = getProductSlugs(p);
@@ -107,7 +107,7 @@ export class GetProductByIdHandler implements IQueryHandler<GetProductByIdQuery>
           });
         }
 
-        // 5. Brand name fallback match
+        
         if (!product && searchTokens.length > 0) {
           product = allProducts.find((p) => {
             const brand = (p.brand || '').toLowerCase();
@@ -115,7 +115,7 @@ export class GetProductByIdHandler implements IQueryHandler<GetProductByIdQuery>
           });
         }
 
-        // 6. Graceful fallback to first product if none found
+        
         if (!product && allProducts.length > 0) {
           product = allProducts[0];
         }

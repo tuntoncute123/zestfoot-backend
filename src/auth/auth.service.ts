@@ -29,7 +29,7 @@ export class AuthService {
       let profile;
 
       if (existing) {
-        // Activate existing account by setting password
+        
         profile = await this.prisma.profile.update({
           where: { id: existing.id },
           data: {
@@ -39,7 +39,7 @@ export class AuthService {
           },
         });
       } else {
-        // Create new account
+        
         const uuid = randomUUID();
         profile = await this.prisma.profile.create({
           data: {

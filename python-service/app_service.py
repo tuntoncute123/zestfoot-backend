@@ -12,7 +12,6 @@ from pydantic import BaseModel
 import urllib.request
 import ssl
 
-# Reconfigure stdout/stderr for UTF-8 Vietnamese output on Windows
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -20,13 +19,11 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-# Add local src folder to path for ML modules
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
 
 import ml_analytics
 
-# Helper for synchronous HTTP requests (Ollama local)
 def sync_post_request(url, headers, body):
     req = urllib.request.Request(
         url,
@@ -67,7 +64,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ZestFoot ML & AI Microservice", version="2.0.0", lifespan=lifespan)
 
-# Enable CORS for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -122,14 +118,14 @@ async def chat_endpoint(req: ChatRequest):
             ],
             "stream": False
         }
-        
+
         status_code, res_bytes = await asyncio.to_thread(
             sync_post_request, f"{ollama_url}/api/chat", {"Content-Type": "application/json"}, body
         )
-        
+
         res_data = json.loads(res_bytes.decode("utf-8"))
         reply_text = res_data.get("message", {}).get("content", "Xin chào! Tôi có thể giúp gì cho bạn?")
-        
+
         return ChatResponse(
             reply=reply_text,
             session_metadata=[],
@@ -143,7 +139,6 @@ async def chat_endpoint(req: ChatRequest):
             generated_image=None
         )
 
-# ML Analytics & Recommendation Endpoints
 @app.get("/api/ml/analytics")
 async def ml_analytics_endpoint():
     """Endpoint for ML forecasting, RFM scoring, and targeted discounts."""

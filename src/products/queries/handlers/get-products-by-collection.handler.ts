@@ -37,7 +37,7 @@ export class GetProductsByCollectionHandler implements IQueryHandler<GetProducts
       return mapped.filter(p => p.category !== 'shoes' && p.category !== 'apparel');
     }
 
-    // Sub-category filters
+    
     if (slug.includes('giay-the-thao')) {
       const gender = slug.includes('nu') ? 'women' : (slug.includes('nam') ? 'men' : null);
       return mapped.filter(p => {
@@ -161,7 +161,7 @@ export class GetProductsByCollectionHandler implements IQueryHandler<GetProducts
       return mapped.filter(p => (p.brand && p.brand.toLowerCase() === 'asics') || p.isAsicsExclusive || (p.name && p.name.toLowerCase().includes('lifewalker')));
     }
 
-    // Brand match fallback
+    
     const brandMatch = mapped.filter(p => p.brand && p.brand.toLowerCase().replace(/\s+/g, '-') === slug);
     if (brandMatch.length > 0) return brandMatch;
 

@@ -49,9 +49,7 @@ export const COUNTRIES = [
   { code: 'qa', name: 'Qatar' }
 ];
 
-/**
- * Maps World Cup campaign voucher prize types to their discount amounts.
- */
+
 export function getVoucherDiscountAmount(prizeType: string): number {
   if (prizeType.includes('500')) return 500000;
   if (prizeType.includes('200')) return 200000;

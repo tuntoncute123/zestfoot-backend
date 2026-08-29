@@ -13,7 +13,7 @@ export class GetProfileByIdHandler implements IQueryHandler<GetProfileByIdQuery>
   async execute(query: GetProfileByIdQuery) {
     const { id } = query;
 
-    // 1. Fetch profile from PostgreSQL (via Prisma)
+    
     const profile = await this.prisma.profile.findUnique({
       where: { id },
       include: {
@@ -24,20 +24,20 @@ export class GetProfileByIdHandler implements IQueryHandler<GetProfileByIdQuery>
 
     if (!profile) return null;
 
-    // Validate UUID format to prevent SQL injection in custom SQL query
+    
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     if (!uuidRegex.test(id)) {
       throw new Error('Invalid UUID format');
     }
 
-    // 2. Fetch time-series point transactions from QuestDB
-    // QuestDB SQL query
+    
+    
     const pointTransactionsSql = `SELECT * FROM point_transactions WHERE user_id = '${id}' ORDER BY created_at DESC LIMIT 100`;
     const transactions = await this.questDb.querySql(pointTransactionsSql);
 
     return {
       ...profile,
-      // Map point transactions fetched from QuestDB
+      
       transactions: transactions.map((t: any) => ({
         id: t.id ? t.id.toString() : undefined,
         user_id: t.user_id,

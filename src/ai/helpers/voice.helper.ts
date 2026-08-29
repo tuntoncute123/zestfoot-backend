@@ -11,9 +11,7 @@ export interface VoiceParseResult {
   target_page: string | null;
 }
 
-/**
- * Parses user voice text input into structured JSON instructions using OpenAI.
- */
+
 export async function parseVoiceText(
   openai: any,
   chatModel: string,

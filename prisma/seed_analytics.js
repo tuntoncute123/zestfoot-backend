@@ -46,7 +46,7 @@ async function main() {
   console.log('🚀 Bắt đầu quá trình seed dữ liệu 100+ bản ghi cho Admin Analytics...');
   await resetSequences(prisma);
 
-  // 1. Fetch existing Profiles and generate more if needed to reach >= 100
+  
   let existingProfiles = await prisma.profile.findMany();
   console.log(`📌 Profiles hiện có: ${existingProfiles.length}`);
 
@@ -81,12 +81,12 @@ async function main() {
 
   const profileIds = existingProfiles.map(p => p.id);
 
-  // 2. Fetch existing products and orders
+  
   const existingProducts = await prisma.product.findMany();
   const existingOrders = await prisma.order.findMany();
   console.log(`📌 Products hiện có: ${existingProducts.length}, Orders hiện có: ${existingOrders.length}`);
 
-  // 3. Populate order_items (needs >= 100)
+  
   const existingOrderItemsCount = await prisma.orderItem.count();
   if (existingOrderItemsCount < 100 && existingOrders.length > 0 && existingProducts.length > 0) {
     console.log(`➕ Đang nạp OrderItems...`);
@@ -110,7 +110,7 @@ async function main() {
     console.log(`✅ OrderItems sau khi nạp: ${await prisma.orderItem.count()}`);
   }
 
-  // 4. Populate point_transactions (needs >= 100)
+  
   const existingPointTxCount = await prisma.pointTransaction.count();
   if (existingPointTxCount < 100) {
     console.log(`➕ Đang nạp PointTransactions...`);
@@ -150,7 +150,7 @@ async function main() {
     console.log(`✅ PointTransactions sau khi nạp: ${await prisma.pointTransaction.count()}`);
   }
 
-  // 5. Populate user_vouchers (needs >= 100)
+  
   const existingVouchersCount = await prisma.userVoucher.count();
   if (existingVouchersCount < 100) {
     console.log(`➕ Đang bổ sung UserVouchers...`);
@@ -177,7 +177,7 @@ async function main() {
     console.log(`✅ UserVouchers sau khi nạp: ${await prisma.userVoucher.count()}`);
   }
 
-  // 6. Populate daily_game_plays (needs >= 100)
+  
   const existingDailyGamePlays = await prisma.dailyGamePlay.count();
   if (existingDailyGamePlays < 100) {
     console.log(`➕ Đang nạp DailyGamePlays...`);
@@ -197,7 +197,7 @@ async function main() {
     console.log(`✅ DailyGamePlays sau khi nạp: ${await prisma.dailyGamePlay.count()}`);
   }
 
-  // 7. Populate social_posts, social_comments, social_reactions (needs >= 100)
+  
   const existingSocialPostsCount = await prisma.socialPost.count();
   if (existingSocialPostsCount < 100) {
     console.log(`➕ Đang nạp SocialPosts, Comments & Reactions...`);
@@ -250,7 +250,7 @@ async function main() {
     const rxTypes = ["like", "love", "fire"];
 
     for (const post of createdPosts) {
-      // 1-2 comments per post
+      
       const numC = getRandomInt(1, 2);
       for (let c = 0; c < numC; c++) {
         commentsData.push({
@@ -261,7 +261,7 @@ async function main() {
         });
       }
 
-      // 1-2 reactions per post
+      
       const numR = getRandomInt(1, 2);
       for (let r = 0; r < numR; r++) {
         reactionsData.push({
@@ -278,7 +278,7 @@ async function main() {
     console.log(`✅ SocialComments: ${await prisma.socialComment.count()}, SocialReactions: ${await prisma.socialReaction.count()}`);
   }
 
-  // 8. Populate game_leaderboard (needs >= 100)
+  
   const existingLeaderboardCount = await prisma.gameLeaderboard.count();
   if (existingLeaderboardCount < 100) {
     console.log(`➕ Đang bổ sung GameLeaderboard...`);
@@ -300,7 +300,7 @@ async function main() {
     console.log(`✅ GameLeaderboard sau khi nạp: ${await prisma.gameLeaderboard.count()}`);
   }
 
-  // 9. Populate qr_tickets (needs >= 100)
+  
   const existingQrTicketsCount = await prisma.qrTicket.count();
   if (existingQrTicketsCount < 100) {
     console.log(`➕ Đang nạp QrTickets...`);
@@ -326,7 +326,7 @@ async function main() {
     console.log(`✅ QrTickets sau khi nạp: ${await prisma.qrTicket.count()}`);
   }
 
-  // 10. Populate spin_history (needs >= 100)
+  
   const existingSpinHistoryCount = await prisma.spinHistory.count();
   if (existingSpinHistoryCount < 100) {
     console.log(`➕ Đang nạp SpinHistory...`);
@@ -356,7 +356,7 @@ async function main() {
     console.log(`✅ SpinHistory sau khi nạp: ${await prisma.spinHistory.count()}`);
   }
 
-  // 11. Populate user_badges & user_badge_claims (needs >= 100)
+  
   const existingUserBadgesCount = await prisma.userBadge.count();
   if (existingUserBadgesCount < 100) {
     console.log(`➕ Đang nạp UserBadges & BadgeClaims...`);
@@ -392,7 +392,7 @@ async function main() {
     console.log(`✅ UserBadges: ${await prisma.userBadge.count()}, UserBadgeClaims: ${await prisma.userBadgeClaim.count()}`);
   }
 
-  // 12. Populate news (needs >= 100)
+  
   const existingNewsCount = await prisma.news.count();
   if (existingNewsCount < 100) {
     console.log(`➕ Đang bổ sung News tin tức bài viết...`);

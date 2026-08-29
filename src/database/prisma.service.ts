@@ -8,7 +8,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   async onModuleInit() {
     await this.$connect();
     
-    // Danh sách các câu lệnh ALTER TABLE riêng biệt (PostgreSQL prepared statement yêu cầu thực thi từng lệnh một)
+    
     const migrationStatements = [
       `ALTER TABLE IF EXISTS orders 
         ADD COLUMN IF NOT EXISTS tracking_code VARCHAR(100),

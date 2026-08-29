@@ -17,18 +17,18 @@ export class WorldCupService {
 
   async getPrizesAndHistory() {
     try {
-      // 1. Fetch prizes stock
+      
       const prizes = await this.prisma.campaignPrize.findMany({
         orderBy: { id: 'asc' },
       });
 
-      // 2. Fetch recent spin logs
+      
       const history = await this.prisma.spinHistory.findMany({
         orderBy: { created_at: 'desc' },
         take: 20,
       });
 
-      // 3. Fetch winners (only actual prizes, not 'nothing')
+      
       const winners = await this.prisma.spinHistory.findMany({
         where: {
           prize_type: {
@@ -39,7 +39,7 @@ export class WorldCupService {
         take: 15,
       });
 
-      // 4. Calculate unique badges leaderboard
+      
       const userBadges = await this.prisma.userBadge.findMany({
         where: { quantity: { gte: 1 } },
       });
@@ -104,7 +104,7 @@ export class WorldCupService {
 
   async spin(token: string, userId: string) {
     try {
-      // 1. Verify user profile exists
+      
       const profile = await this.prisma.profile.findUnique({
         where: { id: userId },
       });
@@ -112,15 +112,15 @@ export class WorldCupService {
         throw new NotFoundException('Tài khoản người dùng không tồn tại.');
       }
 
-      // 2. Verify ticket validity
+      
       const ticketCheck = await this.verifyToken(token);
       if (!ticketCheck.valid) {
         throw new BadRequestException(ticketCheck.message);
       }
 
-      // Run transaction to select prize, decrease stock, consume ticket, and log history
+      
       const result = await this.prisma.$transaction(async (tx) => {
-        // Re-verify ticket inside transaction to prevent double spending
+        
         const ticket = await tx.qrTicket.findUnique({
           where: { id: token },
         });
@@ -128,13 +128,13 @@ export class WorldCupService {
           throw new BadRequestException('Mã vé đã được sử dụng ở tiến trình khác.');
         }
 
-        // Fetch prizes
+        
         const dbPrizes = await tx.campaignPrize.findMany();
         if (dbPrizes.length === 0) {
           throw new BadRequestException('Cơ cấu giải thưởng World Cup chưa được thiết lập.');
         }
 
-        // 3. Roll drop rate probability
+        
         const roll = Math.random();
         let cumulativeSum = 0;
         let selectedPrize = null;
@@ -147,12 +147,12 @@ export class WorldCupService {
           }
         }
 
-        // Default to "nothing" if sum wasn't enough or none selected
+        
         if (!selectedPrize) {
           selectedPrize = dbPrizes.find(p => p.prize_type === 'nothing') || dbPrizes[dbPrizes.length - 1];
         }
 
-        // 4. Handle limited stock falling back to "nothing"
+        
         const isLimitedStock = selectedPrize.prize_type !== 'nothing';
         if (isLimitedStock && selectedPrize.remaining_quantity <= 0) {
           selectedPrize = dbPrizes.find(p => p.prize_type === 'nothing') || {
@@ -161,7 +161,7 @@ export class WorldCupService {
           };
         }
 
-        // 5. Consume ticket
+        
         await tx.qrTicket.update({
           where: { id: token },
           data: {
@@ -174,7 +174,7 @@ export class WorldCupService {
         const isGoal = selectedPrize.prize_type !== 'nothing';
 
         if (isGoal) {
-          // Decrease remaining stock
+          
           await tx.campaignPrize.update({
             where: { id: selectedPrize.id },
             data: {
@@ -182,15 +182,15 @@ export class WorldCupService {
             },
           });
 
-          // Award prize type
+          
           if (selectedPrize.prize_type.startsWith('voucher_') || selectedPrize.prize_type === 'voucher') {
-            // Generate code
+            
             const randSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
             const code = `WC2026-${randSuffix}`;
             
             const amount = getVoucherDiscountAmount(selectedPrize.prize_type);
 
-            // Insert user voucher
+            
             await tx.userVoucher.create({
               data: {
                 user_id: userId,
@@ -202,7 +202,7 @@ export class WorldCupService {
             });
           }
 
-          // Write SpinHistory
+          
           const historyRecord = await tx.spinHistory.create({
             data: {
               user_id: userId,
@@ -222,10 +222,10 @@ export class WorldCupService {
             historyRecord,
           };
         } else {
-          // Consulate prize: Random National Badge
+          
           const randomCountry = COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)];
           
-          // Award badge to user
+          
           await tx.userBadge.upsert({
             where: {
               user_id_badge_type: {
@@ -243,7 +243,7 @@ export class WorldCupService {
             },
           });
 
-          // Write SpinHistory
+          
           const historyRecord = await tx.spinHistory.create({
             data: {
               user_id: userId,
@@ -265,7 +265,7 @@ export class WorldCupService {
         }
       });
 
-      // 6. Broadcast winner to all WebSocket clients (non-blocking)
+      
       try {
         const winnerName = profile.full_name || 'Khách hàng';
         const prizeDesc = result.isGoal ? result.prize.prize_name : `Huy hiệu ${COUNTRIES.find(c => c.code === result.bonusBadge)?.name}`;
@@ -296,7 +296,7 @@ export class WorldCupService {
         throw new NotFoundException('Tài khoản người dùng không tồn tại.');
       }
 
-      // Verify user collects all 48 unique badges
+      
       const badgeCount = await this.prisma.userBadge.count({
         where: {
           user_id: userId,
@@ -308,7 +308,7 @@ export class WorldCupService {
         throw new BadRequestException('Bạn cần thu thập đủ 48 huy hiệu quốc gia mới có thể đổi thưởng giày!');
       }
 
-      // Verify user hasn't claimed yet
+      
       const existingClaim = await this.prisma.userBadgeClaim.findFirst({
         where: { user_id: userId },
       });
@@ -318,7 +318,7 @@ export class WorldCupService {
       }
 
       const orderResult = await this.prisma.$transaction(async (tx) => {
-        // Create free Order
+        
         const newOrder = await tx.order.create({
           data: {
             customer: {
@@ -344,7 +344,7 @@ export class WorldCupService {
           },
         });
 
-        // Create Badge Claim record
+        
         await tx.userBadgeClaim.create({
           data: {
             user_id: userId,

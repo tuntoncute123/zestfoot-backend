@@ -17,10 +17,7 @@ export class SaveScoreDto {
   score: number;
 }
 
-/**
- * GamesController - xử lý các endpoint liên quan đến game
- * Base route: /zestfoot/games
- */
+
 @ApiTags('games')
 @Controller('games')
 export class GamesController {

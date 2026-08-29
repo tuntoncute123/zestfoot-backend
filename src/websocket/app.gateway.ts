@@ -41,32 +41,26 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.join(`leaderboard_${data.gameName}`);
     client.emit('subscribed', { room: `leaderboard_${data.gameName}` });
 
-    // Fetch instant top 10 from Redis Sorted Set
+    
     const topLeaderboard = await this.redisService.getTopLeaderboard(data.gameName || 'default', 10);
     if (topLeaderboard && topLeaderboard.length > 0) {
       client.emit('leaderboardUpdate', topLeaderboard);
     }
   }
 
-  /**
-   * Broadcasts lucky spin winners to all connected clients
-   */
+  
   broadcastSpinWinner(winnerData: { userName: string; prizeName: string }) {
     this.logger.log(`Broadcasting spin winner: ${winnerData.userName} won ${winnerData.prizeName}`);
     this.server.emit('spinWinnerBroadcast', winnerData);
   }
 
-  /**
-   * Broadcasts real-time leaderboard updates to subscribed clients
-   */
+  
   broadcastLeaderboardUpdate(gameName: string, leaderboard: any[]) {
     this.logger.log(`Broadcasting leaderboard update for game: ${gameName}`);
     this.server.to(`leaderboard_${gameName}`).emit('leaderboardUpdate', leaderboard);
   }
 
-  /**
-   * Broadcasts order status changes
-   */
+  
   broadcastOrderStatus(orderId: string, status: string) {
     this.logger.log(`Broadcasting order status update for order ${orderId}: ${status}`);
     this.server.emit(`order_${orderId}_status`, { orderId, status });

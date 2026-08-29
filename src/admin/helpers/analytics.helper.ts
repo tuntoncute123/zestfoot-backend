@@ -123,7 +123,7 @@ export function computeAnalytics(sales: any[], engagement: any[], products: any[
     else pointsBySource.other += amount;
   });
 
-  // C. CUSTOMER COHORT RETENTION ANALYSIS
+  
   const customerOrders: Record<string, any[]> = {};
   
   salesWithBrands.forEach((item: any) => {
@@ -152,7 +152,7 @@ export function computeAnalytics(sales: any[], engagement: any[], products: any[
   Object.keys(customerOrders).forEach((customerId) => {
     const orders = customerOrders[customerId].sort((a: any, b: any) => a.date.getTime() - b.date.getTime());
     const firstOrder = orders[0];
-    const cohortMonth = firstOrder.date.toISOString().substring(0, 7); // 'YYYY-MM'
+    const cohortMonth = firstOrder.date.toISOString().substring(0, 7); 
     
     customerCohorts[customerId] = {
       cohortMonth,
@@ -218,7 +218,7 @@ export function computeAnalytics(sales: any[], engagement: any[], products: any[
       };
     });
 
-  // D. REVENUE BY BRAND DRILLDOWN
+  
   const revenueByBrand: Record<string, number> = {};
   salesWithBrands.forEach((s: any) => {
     if (s.order_status === 'delivered') {
@@ -235,7 +235,7 @@ export function computeAnalytics(sales: any[], engagement: any[], products: any[
 
   const availableBrands = Array.from(new Set(salesWithBrands.map((s: any) => s.brand).filter(Boolean)));
 
-  // E. EXTENDED DASHBOARD METRICS
+  
   const monthlyRevenue: Record<string, any> = {};
   deliveredOrders.forEach((o) => {
     const month = o.date ? o.date.substring(0, 7) : 'Unknown';

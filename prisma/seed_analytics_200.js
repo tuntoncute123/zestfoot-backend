@@ -52,14 +52,14 @@ async function main() {
   console.log('🚀 Bắt đầu nạp thêm 200 bản ghi dữ liệu ngẫu nhiên (trải dài thời gian 365 ngày)...');
   await resetSequences();
 
-  // 1. Fetch products
+  
   const products = await prisma.product.findMany();
   if (products.length === 0) {
     console.error('❌ Không tìm thấy sản phẩm trong DB!');
     return;
   }
 
-  // 2. Generate 200 new Profiles
+  
   console.log('➕ Tạo 200 Profiles mới với thông tin Việt Nam...');
   const newProfiles = [];
   const tiers = ["Silver", "Gold", "Platinum", "VIP"];
@@ -83,7 +83,7 @@ async function main() {
   const profileIds = allProfiles.map(p => p.id);
   console.log(`✅ Tổng Profiles hiện tại: ${allProfiles.length}`);
 
-  // 3. Generate 200 new Orders & matching OrderItems using createMany
+  
   console.log('➕ Tạo 200 Orders mới trải dài 365 ngày qua...');
   const orderStatuses = ["completed", "completed", "completed", "shipped", "pending", "cancelled"];
   const paymentMethods = ["COD", "Momo", "VNPay", "ZaloPay", "CreditCard"];
@@ -150,7 +150,7 @@ async function main() {
   await prisma.orderItem.createMany({ data: orderItemsData });
   console.log(`✅ Tổng Orders hiện tại: ${await prisma.order.count()}, OrderItems: ${await prisma.orderItem.count()}`);
 
-  // 4. Generate 200 Reviews with Sentiment
+  
   console.log('➕ Tạo 200 Reviews với Sentiment AI trải dài 365 ngày...');
   const positiveReviews = [
     { title: "Giày đẹp xuất sắc!", content: "Đi cực kỳ êm chân, đúng size, giao hàng siêu nhanh. Sẽ tiếp tục ủng hộ ZestFoot!", rating: 5, sentiment: "POSITIVE", score: 0.95 },
@@ -203,7 +203,7 @@ async function main() {
   }
   console.log(`✅ Tổng Reviews hiện tại: ${await prisma.review.count()}`);
 
-  // 5. Generate 200 PointTransactions
+  
   console.log('➕ Tạo 200 PointTransactions mới...');
   const earnReasons = ["Tích điểm đơn hàng mua thành công", "Thưởng review sản phẩm", "Điểm danh hàng ngày", "Quà tặng sinh nhật"];
   const spendReasons = ["Đổi mã giảm giá 50k", "Đổi quà tặng phụ kiện", "Tham gia Vòng quay lucky spin"];
@@ -221,7 +221,7 @@ async function main() {
   await prisma.pointTransaction.createMany({ data: pointTxData });
   console.log(`✅ Tổng PointTransactions hiện tại: ${await prisma.pointTransaction.count()}`);
 
-  // 6. Generate 200 UserVouchers
+  
   console.log('➕ Tạo 200 UserVouchers mới...');
   const voucherData = [];
   const statuses = ["active", "used", "expired"];
@@ -241,7 +241,7 @@ async function main() {
   await prisma.userVoucher.createMany({ data: voucherData });
   console.log(`✅ Tổng UserVouchers hiện tại: ${await prisma.userVoucher.count()}`);
 
-  // 7. Generate 200 DailyGamePlays
+  
   console.log('➕ Tạo 200 DailyGamePlays mới...');
   const games = ["Lucky Spin", "Sneaker Quiz", "Memory Match"];
   const gamePlayData = [];
@@ -255,7 +255,7 @@ async function main() {
   await prisma.dailyGamePlay.createMany({ data: gamePlayData });
   console.log(`✅ Tổng DailyGamePlays hiện tại: ${await prisma.dailyGamePlay.count()}`);
 
-  // 8. Generate 200 SocialPosts, Comments & Reactions
+  
   console.log('➕ Tạo 200 SocialPosts, SocialComments & SocialReactions mới...');
   const postCaptions = [
     "Hôm nay lên chân em Air Force 1 đi làm, sếp khen đẹp nức nở 😎",
@@ -305,7 +305,7 @@ async function main() {
   await prisma.socialReaction.createMany({ data: reactionsData });
   console.log(`✅ Tổng SocialPosts: ${await prisma.socialPost.count()}, Comments: ${await prisma.socialComment.count()}, Reactions: ${await prisma.socialReaction.count()}`);
 
-  // 9. Generate 200 GameLeaderboard entries
+  
   console.log('➕ Tạo 200 GameLeaderboard mới...');
   const leaderboardData = [];
   for (let i = 0; i < 200; i++) {
@@ -319,7 +319,7 @@ async function main() {
   await prisma.gameLeaderboard.createMany({ data: leaderboardData });
   console.log(`✅ Tổng GameLeaderboard hiện tại: ${await prisma.gameLeaderboard.count()}`);
 
-  // 10. Generate 200 QrTickets
+  
   console.log('➕ Tạo 200 QrTickets mới...');
   const qrTicketsData = [];
   for (let i = 0; i < 200; i++) {
@@ -338,7 +338,7 @@ async function main() {
   await prisma.qrTicket.createMany({ data: qrTicketsData });
   console.log(`✅ Tổng QrTickets hiện tại: ${await prisma.qrTicket.count()}`);
 
-  // 11. Generate 200 SpinHistory entries
+  
   console.log('➕ Tạo 200 SpinHistory mới...');
   const prizes = [
     { name: "Voucher 50.000₫", type: "voucher" },
@@ -362,7 +362,7 @@ async function main() {
   await prisma.spinHistory.createMany({ data: spinData });
   console.log(`✅ Tổng SpinHistory hiện tại: ${await prisma.spinHistory.count()}`);
 
-  // 12. Generate 200 UserBadgeClaims
+  
   console.log('➕ Tạo 200 UserBadgeClaims mới...');
   const claimsData = [];
   for (let i = 0; i < 200; i++) {
@@ -376,7 +376,7 @@ async function main() {
   await prisma.userBadgeClaim.createMany({ data: claimsData });
   console.log(`✅ Tổng UserBadgeClaims hiện tại: ${await prisma.userBadgeClaim.count()}`);
 
-  // 13. Generate 200 News posts
+  
   console.log('➕ Tạo 200 News tin tức bài viết mới...');
   const newsTopics = [
     "Đánh Giá Chi Tiết Siêu Phẩm Sneaker Mới Ra Mắt",

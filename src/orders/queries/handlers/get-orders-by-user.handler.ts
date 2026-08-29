@@ -8,7 +8,7 @@ export class GetOrdersByUserHandler implements IQueryHandler<GetOrdersByUserQuer
 
   async execute(query: GetOrdersByUserQuery) {
     const { email } = query;
-    // Find all orders where customer -> email = email
+    
     const orders = await this.prisma.order.findMany({
       where: {
         customer: {

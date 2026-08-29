@@ -60,7 +60,7 @@ export class ProfilesService {
         updateData.email = data.email;
       }
 
-      // Check fields matching snake_case as well just in case
+      
       if (data.last_lucky_spin !== undefined) {
         updateData.last_lucky_spin = data.last_lucky_spin ? new Date(data.last_lucky_spin) : null;
       }
@@ -116,7 +116,7 @@ export class ProfilesService {
 
   async saveScore(userId: string, gameName: string, score: number) {
     try {
-      // Validate that userId is a profile
+      
       const profile = await this.prisma.profile.findUnique({
         where: { id: userId },
       });
@@ -124,7 +124,7 @@ export class ProfilesService {
         throw new NotFoundException(`Profile with user ID: ${userId} not found`);
       }
 
-      // Check if user has an existing score for this game
+      
       const existing = await this.prisma.gameLeaderboard.findFirst({
         where: {
           user_id: userId,
@@ -152,10 +152,10 @@ export class ProfilesService {
         });
       }
 
-      // Fetch the updated leaderboard for the game
+      
       const updatedLeaderboard = await this.getLeaderboard(gameName);
 
-      // Broadcast the real-time update via WebSocket
+      
       this.appGateway.broadcastLeaderboardUpdate(gameName, updatedLeaderboard);
 
       return record;
