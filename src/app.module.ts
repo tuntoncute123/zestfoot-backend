@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { AiModule } from './ai/ai.module';
 import { SocialModule } from './social/social.module';
 import { GhnModule } from './ghn/ghn.module';
+import { PaymentModule } from './payment/payment.module';
 import { RedisModule } from './common/redis.module';
 import { appConfig } from './config/app.config';
 
@@ -25,6 +26,7 @@ import { appConfig } from './config/app.config';
     DatabaseModule,
     ProductsModule,
     OrdersModule,
+    PaymentModule,
     GhnModule,
     ProfilesModule,
     WebSocketModule,

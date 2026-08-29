@@ -185,12 +185,23 @@ export class PayosService {
   
   async getPaymentLinkInfo(orderIdOrCode: string | number) {
     try {
-      const orderCode = this.generateOrderCode(orderIdOrCode);
-      const info = await this.payos.paymentRequests.get(orderCode);
+      let codeToQuery: number;
+      const rawNum = parseInt(String(orderIdOrCode).replace(/\D/g, ''), 10);
 
-      
+      const order = await this.prisma.order.findUnique({
+        where: { id: BigInt(rawNum) },
+      }).catch(() => null);
+
+      if (order && (order.payment_info as any)?.order_code) {
+        codeToQuery = Number((order.payment_info as any).order_code);
+      } else {
+        codeToQuery = rawNum;
+      }
+
+      const info = await this.payos.paymentRequests.get(codeToQuery);
+
       if (info && info.status === 'PAID') {
-        await this.handlePaymentSuccess(orderCode, info);
+        await this.handlePaymentSuccess(codeToQuery, info);
       }
 
       return {
@@ -203,12 +214,27 @@ export class PayosService {
     }
   }
 
-  
-  async cancelPaymentLink(orderCode: number, reason: string = 'Khach hang huy thanh toan') {
+  async cancelPaymentLink(orderIdOrCode: string | number, reason?: string) {
     try {
-      const sanitizedReason = this.sanitizeDescription(reason);
-      const result = await this.payos.paymentRequests.cancel(orderCode, sanitizedReason);
-      return { success: true, data: result };
+      let codeToQuery: number;
+      const rawNum = parseInt(String(orderIdOrCode).replace(/\D/g, ''), 10);
+
+      const order = await this.prisma.order.findUnique({
+        where: { id: BigInt(rawNum) },
+      }).catch(() => null);
+
+      if (order && (order.payment_info as any)?.order_code) {
+        codeToQuery = Number((order.payment_info as any).order_code);
+      } else {
+        codeToQuery = rawNum;
+      }
+
+      const sanitizedReason = reason ? this.sanitizeDescription(reason) : 'Khach hang yeu cau huy';
+      const result = await this.payos.paymentRequests.cancel(codeToQuery, sanitizedReason);
+      return {
+        success: true,
+        data: result,
+      };
     } catch (error) {
       this.logger.error(`Error cancelling PayOS link: ${error.message}`);
       throw new BadRequestException(`Không thể hủy liên kết thanh toán: ${error.message}`);
