@@ -1,23 +1,47 @@
 export function computeMiningData(orders: any[], reviews: any[], products: any[]) {
-  const completedOrders = orders.filter((o) => o.status === 'delivered');
+  const safeOrders = Array.isArray(orders) ? orders : [];
+  const safeReviews = Array.isArray(reviews) ? reviews : [];
+  const safeProducts = Array.isArray(products) ? products : [];
+
+  const completedOrders = safeOrders.filter((o) => o && o.status === 'delivered');
   const totalOrdersCount = completedOrders.length;
 
-  
+  // 1. Apriori Market Basket Analysis
   const productCounts: Record<number, number> = {};
   const pairCounts: Record<string, number> = {};
   const productDetailsMap: Record<number, any> = {};
 
-  products.forEach((p) => {
-    productDetailsMap[Number(p.id)] = {
-      name: p.name,
-      image: p.image,
-      brand: p.brand,
-    };
+  safeProducts.forEach((p) => {
+    if (p && p.id != null) {
+      productDetailsMap[Number(p.id)] = {
+        name: p.name || `Sản phẩm #${p.id}`,
+        image: p.image || null,
+        brand: p.brand || 'ZestFoot',
+      };
+    }
   });
 
   completedOrders.forEach((o) => {
-    const items = (typeof o.items === 'string' ? JSON.parse(o.items) : o.items) || [];
-    const uniqueIds = Array.from(new Set(items.map((item: any) => Number(item.product_id || item.id)).filter(Boolean))) as number[];
+    let items: any[] = [];
+    try {
+      if (typeof o.items === 'string') {
+        items = JSON.parse(o.items);
+      } else if (Array.isArray(o.items)) {
+        items = o.items;
+      }
+    } catch {
+      items = [];
+    }
+
+    if (!Array.isArray(items)) items = [];
+
+    const uniqueIds = Array.from(
+      new Set(
+        items
+          .map((item: any) => Number(item?.product_id || item?.id))
+          .filter((id) => !isNaN(id) && id > 0)
+      )
+    ) as number[];
 
     uniqueIds.forEach((id) => {
       productCounts[id] = (productCounts[id] || 0) + 1;
@@ -37,28 +61,30 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
   if (totalOrdersCount > 0) {
     for (const [key, countBoth] of Object.entries(pairCounts)) {
       const [id1, id2] = key.split('-').map(Number);
-      const countA = productCounts[id1];
-      const countB = productCounts[id2];
+      const countA = productCounts[id1] || countBoth;
+      const countB = productCounts[id2] || countBoth;
 
       const support = countBoth / totalOrdersCount;
-      const confidenceAToB = countBoth / countA;
-      const confidenceBToA = countBoth / countB;
+      const confidenceAToB = countA > 0 ? countBoth / countA : 0;
+      const confidenceBToA = countB > 0 ? countBoth / countB : 0;
 
       const supportA = countA / totalOrdersCount;
       const supportB = countB / totalOrdersCount;
-      const lift = support / (supportA * supportB);
+      const denom = supportA * supportB;
+      const lift = denom > 0 ? support / denom : 1;
+
+      const detailsA = productDetailsMap[id1] || { name: `Sản phẩm #${id1}`, brand: 'ZestFoot', image: null };
+      const detailsB = productDetailsMap[id2] || { name: `Sản phẩm #${id2}`, brand: 'ZestFoot', image: null };
 
       let suggestion = '';
       if (lift > 1) {
-        const nameA = productDetailsMap[id1]?.name || `Sản phẩm #${id1}`;
-        const nameB = productDetailsMap[id2]?.name || `Sản phẩm #${id2}`;
-        suggestion = `Tạo combo "${nameA} + ${nameB}" giảm giá 10% hoặc đặt chúng cạnh nhau trong danh mục gợi ý mua kèm tại trang Checkout.`;
+        suggestion = `Tạo combo "${detailsA.name} + ${detailsB.name}" giảm giá 10% hoặc đặt chúng cạnh nhau trong danh mục gợi ý mua kèm tại trang Checkout.`;
       }
 
       marketBasketRules.push({
         id: key,
-        productA: { id: id1, ...productDetailsMap[id1] },
-        productB: { id: id2, ...productDetailsMap[id2] },
+        productA: { id: id1, ...detailsA },
+        productB: { id: id2, ...detailsB },
         countBoth,
         support: Math.round(support * 1000) / 10,
         confidenceAtoB: Math.round(confidenceAToB * 1000) / 10,
@@ -70,16 +96,26 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
   }
   marketBasketRules.sort((a, b) => b.lift - a.lift || b.countBoth - a.countBoth);
 
-  
+  // 2. RFM Customer Segmentation
   const customerRFM: Record<string, any> = {};
   completedOrders.forEach((o) => {
-    const customerObj = typeof o.customer === 'string' ? JSON.parse(o.customer) : o.customer;
-    const email = customerObj?.email || 'anonymous';
-    if (email === 'anonymous') return;
+    let customerObj: any = null;
+    try {
+      customerObj = typeof o.customer === 'string' ? JSON.parse(o.customer) : o.customer;
+    } catch {
+      customerObj = null;
+    }
 
-    const orderDate = new Date(o.created_at);
+    const email = customerObj?.email || 'anonymous';
+    if (!email || email === 'anonymous') return;
+
+    let orderDate = new Date(o.created_at || Date.now());
+    if (isNaN(orderDate.getTime())) {
+      orderDate = new Date();
+    }
+
     const totalAmount = Number(o.total_amount) || 0;
-    const name = customerObj?.fullName || 'Khách vãng lai';
+    const name = customerObj?.fullName || customerObj?.name || 'Khách hàng';
 
     if (!customerRFM[email]) {
       customerRFM[email] = {
@@ -100,7 +136,10 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
   const now = new Date();
   const customersArray = Object.keys(customerRFM).map((email) => {
     const c = customerRFM[email];
-    const recencyDays = Math.max(0, Math.floor((now.getTime() - c.lastOrderDate.getTime()) / (1000 * 60 * 60 * 24)));
+    const recencyDays = Math.max(
+      0,
+      Math.floor((now.getTime() - c.lastOrderDate.getTime()) / (1000 * 60 * 60 * 24))
+    );
 
     let rScore = 1;
     if (recencyDays < 15) rScore = 5;
@@ -149,7 +188,7 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
 
     return {
       email,
-      name: c.name,
+      name: c.name || 'Khách hàng',
       lastOrderDate: c.lastOrderDate.toISOString(),
       recencyDays,
       orderCount: c.orderCount,
@@ -181,15 +220,16 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
   const rfmAvgStats: Record<string, any> = {};
   Object.keys(rfmStatsAccumulator).forEach((segment) => {
     const acc = rfmStatsAccumulator[segment];
+    const cnt = acc.count > 0 ? acc.count : 1;
     rfmAvgStats[segment] = {
       segment,
-      avgRecency: Math.round((acc.recencySum / acc.count) * 10) / 10,
-      avgFrequency: Math.round((acc.freqSum / acc.count) * 10) / 10,
-      avgMonetary: Math.round(rfmRevenue[segment] / acc.count),
+      avgRecency: Math.round((acc.recencySum / cnt) * 10) / 10,
+      avgFrequency: Math.round((acc.freqSum / cnt) * 10) / 10,
+      avgMonetary: Math.round(rfmRevenue[segment] / cnt),
     };
   });
 
-  
+  // 3. Review Text Mining
   const matchPatterns = {
     size: /chật|rộng|ôm sát|kích|size|hơi khít|không vừa|to quá|bé quá|kích chân/i,
     comfort: /đau|cứng|mỏi|rát|phồng|bí|nóng|nhức|thốn|rát chân|bí bách|khó chịu/i,
@@ -197,12 +237,13 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
   };
 
   const reviewIssuesMap: Record<string, any> = {};
-  reviews.forEach((r) => {
+  safeReviews.forEach((r) => {
+    if (!r) return;
     const text = `${r.title || ''} ${r.content || ''}`;
     const productId = r.product_id ? r.product_id.toString() : null;
     if (!productId) return;
 
-    const isNegative = r.rating <= 3 || r.sentiment === 'negative';
+    const isNegative = (r.rating && r.rating <= 3) || r.sentiment === 'negative';
     const hasSize = matchPatterns.size.test(text);
     const hasComfort = matchPatterns.comfort.test(text);
     const hasQuality = matchPatterns.quality.test(text);
@@ -213,7 +254,7 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
           productId,
           name: r.product?.name || `Sản phẩm #${productId}`,
           image: r.product?.image || null,
-          brand: r.product?.brand || 'Other',
+          brand: r.product?.brand || 'ZestFoot',
           sizeIssues: 0,
           comfortIssues: 0,
           qualityIssues: 0,
@@ -229,12 +270,12 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
 
       if (isNegative && record.sampleQuotes.length < 3) {
         record.sampleQuotes.push({
-          id: r.id,
-          displayName: r.display_name,
-          rating: r.rating,
-          content: r.content,
-          sentiment: r.sentiment,
-          created_at: r.created_at,
+          id: r.id || String(Math.random()),
+          displayName: r.display_name || 'Khách hàng',
+          rating: typeof r.rating === 'number' ? r.rating : 5,
+          content: r.content || '',
+          sentiment: r.sentiment || null,
+          created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
         });
       }
     }
@@ -250,18 +291,18 @@ export function computeMiningData(orders: any[], reviews: any[], products: any[]
   const brandIssues: Record<string, any> = {};
 
   productReviewIssues.forEach((p) => {
-    totalSizeIssues += p.sizeIssues;
-    totalComfortIssues += p.comfortIssues;
-    totalQualityIssues += p.qualityIssues;
+    totalSizeIssues += p.sizeIssues || 0;
+    totalComfortIssues += p.comfortIssues || 0;
+    totalQualityIssues += p.qualityIssues || 0;
 
-    const brand = p.brand || 'Other';
+    const brand = p.brand || 'ZestFoot';
     if (!brandIssues[brand]) {
       brandIssues[brand] = { brand, sizing: 0, comfort: 0, quality: 0, total: 0 };
     }
-    brandIssues[brand].sizing += p.sizeIssues;
-    brandIssues[brand].comfort += p.comfortIssues;
-    brandIssues[brand].quality += p.qualityIssues;
-    brandIssues[brand].total += p.totalIssues;
+    brandIssues[brand].sizing += p.sizeIssues || 0;
+    brandIssues[brand].comfort += p.comfortIssues || 0;
+    brandIssues[brand].quality += p.qualityIssues || 0;
+    brandIssues[brand].total += p.totalIssues || 0;
   });
 
   const brandIssuesArray = Object.values(brandIssues).sort((a: any, b: any) => b.total - a.total);

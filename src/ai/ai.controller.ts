@@ -1,31 +1,45 @@
 import { Controller, Post, Body, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsOptional, IsArray } from 'class-validator';
 import { AiService } from './ai.service';
 
 export class ChatDto {
   @ApiProperty({ description: 'Tin nhắn gửi đến AI', example: 'Tư vấn cho tôi giày chạy bộ nam' })
+  @IsString()
+  @IsNotEmpty()
   message: string;
 
   @ApiPropertyOptional({ description: 'Siêu dữ liệu phiên trò chuyện' })
+  @IsOptional()
+  @IsArray()
   session_metadata?: any[];
 
   @ApiPropertyOptional({ description: 'Ảnh người dùng dạng Base64' })
+  @IsOptional()
+  @IsString()
   user_image_base64?: string;
 
   @ApiPropertyOptional({ description: 'Ảnh đôi giày dạng Base64' })
+  @IsOptional()
+  @IsString()
   shoe_image_base64?: string;
 }
 
 export class ChatRagDto {
   @ApiProperty({ description: 'Câu hỏi của khách hàng', example: 'Đơn hàng của tôi giao đến đâu rồi?' })
+  @IsString()
+  @IsNotEmpty()
   message: string;
 
   @ApiPropertyOptional({ description: 'Ngữ cảnh người dùng (userId, email, tên)' })
+  @IsOptional()
   userContext?: any;
 }
 
 export class ParseVoiceDto {
   @ApiProperty({ description: 'Nội dung khẩu lệnh giọng nói thô', example: 'vào giỏ hàng' })
+  @IsString()
+  @IsNotEmpty()
   text: string;
 }
 

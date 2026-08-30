@@ -23,6 +23,14 @@ export class WorldCupController {
     return this.worldCupService.verifyToken(body.token);
   }
 
+  @Post('verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Kiểm tra tính hợp lệ của mã vé dự thưởng World Cup (Alias)' })
+  @ApiResponse({ status: 200, description: 'Trạng thái hợp lệ kèm chi tiết mã vé hoặc thông tin lỗi nếu không hợp lệ.' })
+  async verifyTokenAlias(@Body() body: VerifyTokenDto) {
+    return this.worldCupService.verifyToken(body.token);
+  }
+
   @Post('spin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Thực hiện sút phạt đền (lượt quay) World Cup đổi thưởng' })
